@@ -558,7 +558,15 @@ const Audit = (function () {
     return pisos.find(p => c && norm(p.funcao) && (c.includes(norm(p.funcao)) || norm(p.funcao).includes(c))) || null;
   }
   function contribAssistencial(regras) {
-    return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && x.percentual);
+    return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && (x.percentual || x.cronograma));
+  }
+  // percentual da assistencial na competência (cronograma [{competencia:"06/2026",percentual:2}] tem prioridade)
+  function pctAssistencial(assist, competencia) {
+    if (assist && Array.isArray(assist.cronograma) && competencia) {
+      const m = assist.cronograma.find(x => (x.competencia || '') === competencia);
+      if (m && m.percentual != null) return money(m.percentual);
+    }
+    return money(assist && assist.percentual);
   }
 
   function run(folha, conv, config) {
@@ -582,14 +590,31 @@ const Audit = (function () {
       const nome = f.nome;
       const sal = money(f.salario);
 
-      // 1) PISO
+      // 0) PRÓ-LABORE / SÓCIO / AUTÔNOMO — não é celetista, fica fora da conferência CLT.
+      //    Detecta por: (a) campo "vinculo" lido pela IA, (b) cargo/situação de sócio/titular
+      //    (com \b pra não casar "social"), (c) rubrica PRÓ-LABORE na folha (sinal mais forte).
+      const vinc = norm(f.vinculo);
+      const ehProLabore =
+        /pro.?labore|contribuinte individual|autonom|s[óo]ci[oa]|titular|diretor/.test(vinc)
+        || /\b(s[óo]ci[oa]|titular)\b/.test(norm(f.cargo) + ' ' + norm(f.situacao))
+        || !!acharRubrica(f, /pro.?labore/);
+      if (ehProLabore) {
+        add('alerta', 'Pró-labore / sócio — fora da conferência CLT',
+          `${nome}: não é celetista, então piso, triênio, quebra de caixa e horas extras não se aplicam. Confira apenas INSS/IRRF pelas regras de contribuinte individual.`, nome);
+        return;
+      }
+
+      // 1) PISO (proporcional às horas contratadas quando a jornada é reduzida)
       const piso = pisoAplicavel(regras, f.cargo);
       if (piso && money(piso.valor)) {
-        if (sal < money(piso.valor) - 0.01) {
+        const h = money(f.horasMes);
+        const fator = (h > 0 && h < 219) ? h / 220 : 1;   // 220h = jornada cheia (44h)
+        const pisoEsp = round2(money(piso.valor) * fator);
+        if (sal < pisoEsp - 0.01) {
           add('erro', 'Salário abaixo do piso',
-            `Piso da convenção: ${brl(piso.valor)}. Corrigir o salário-base.`, nome, money(piso.valor) - sal);
+            `${nome}: salário ${brl(sal)} < piso${fator < 1 ? ' proporcional a ' + Math.round(h) + 'h' : ''} ${brl(pisoEsp)}${fator < 1 ? ' (piso cheio ' + brl(piso.valor) + ')' : ''}. Corrigir o salário-base.`, nome, pisoEsp - sal);
         } else {
-          add('conforme', 'Salário conforme o piso', `Todos ≥ ${brl(piso.valor)}.`, nome);
+          add('conforme', 'Salário conforme o piso', `Salário ≥ piso (proporcional às horas quando a jornada é reduzida).`, nome);
         }
       } else {
         add('alerta', 'Função sem piso mapeado',
@@ -606,18 +631,19 @@ const Audit = (function () {
         add('conforme', 'Adicional noturno com reflexo em DSR', 'Reflexo do noturno presente.', nome);
       }
 
-      // 3) CONTRIBUIÇÃO ASSISTENCIAL
+      // 3) CONTRIBUIÇÃO ASSISTENCIAL (percentual pode variar por mês — usa a competência)
       if (assist) {
-        const esperado = round2(sal * money(assist.percentual) / 100);
+        const pct = pctAssistencial(assist, folha.competencia);
+        const esperado = round2(sal * pct / 100);
         const rub = acharRubrica(f, /assistenc|contribui.*sindic|sindical|negocial/, 'D');
         if (!rub) {
           add('alerta', 'Contribuição assistencial não descontada',
-            `A CCT prevê ${assist.percentual}% (${brl(esperado)}). Verificar direito de oposição ou lançamento.`, nome, esperado);
+            `A CCT prevê ${pct}% nesta competência (${brl(esperado)}). Verificar direito de oposição ou lançamento.`, nome, esperado);
         } else if (Math.abs(money(rub.valor) - esperado) > 0.05) {
           add('erro', 'Contribuição assistencial com valor divergente',
-            `CCT prevê ${assist.percentual}% = ${brl(esperado)}. Na folha: "${rub.descricao.trim()}" = ${brl(rub.valor)}. Diferença ${brl(Math.abs(esperado - money(rub.valor)))}/empregado.`, nome, esperado - money(rub.valor));
+            `CCT prevê ${pct}% em ${folha.competencia || 'nesta competência'} = ${brl(esperado)}. Na folha: "${rub.descricao.trim()}" = ${brl(rub.valor)}. Diferença ${brl(Math.abs(esperado - money(rub.valor)))}/empregado.`, nome, esperado - money(rub.valor));
         } else {
-          add('conforme', 'Contribuição assistencial correta', `${assist.percentual}% aplicado.`, nome);
+          add('conforme', 'Contribuição assistencial correta', `${pct}% aplicado nesta competência.`, nome);
         }
       }
 
@@ -829,12 +855,15 @@ const IA = (function () {
       '  "totais": {"proventos": number, "descontos": number, "liquido": number, "baseFGTS": number, "valorFGTS": number, "inssSegurados": number, "inssEmpresa": number},\n' +
       '  "funcionarios": [{\n' +
       '    "matricula": string, "nome": string, "cpf": string, "cargo": string, "cbo": string,\n' +
-      '    "admissao": "AAAA-MM-DD", "situacao": string, "salario": number, "horasMes": number,\n' +
+      '    "admissao": "AAAA-MM-DD", "situacao": string, "vinculo": string, "salario": number, "horasMes": number,\n' +
       '    "rubricas": [{"cod": string, "descricao": string, "referencia": number, "valor": number, "tipo": "P"|"D"|"I"}],\n' +
       '    "proventos": number, "descontos": number, "liquido": number, "baseINSS": number, "baseFGTS": number, "valorFGTS": number\n' +
       '  }]\n' +
       '}\n\n' +
-      'tipo da rubrica: "P" provento, "D" desconto, "I" informativa. Valores em número (ponto decimal). ' +
+      'tipo da rubrica: "P" provento, "D" desconto, "I" informativa. Valores em número (ponto decimal).\n' +
+      '"vinculo": tipo de vínculo do trabalhador. Use "pro-labore" se for sócio/diretor/titular com retirada de pró-labore ' +
+      '(indícios: rubrica "PRÓ-LABORE", cargo "SÓCIO"/"DIRETOR"/"TITULAR", contribuinte individual, ausência de FGTS/INSS de empregado); ' +
+      'senão use "clt" (ou o que o documento indicar, ex.: "estagiario", "aprendiz"). "horasMes": horas mensais CONTRATADAS (220 para 44h; menor se jornada reduzida/parcial).\n' +
       'Transcreva TODOS os funcionários e TODAS as rubricas exatamente como no documento. Não invente dados.';
     const content = [doc(base64pdf), { type: 'text', text: 'Extraia a folha no JSON pedido.' }];
     return extrairJSON(await chamar(cfg, system, content, 24000));
@@ -1360,13 +1389,55 @@ const IA = (function () {
   /* ============================================================
      HISTÓRICO / DÚVIDAS (esqueleto do MVP)
   ============================================================ */
+  const compKey = c => { const m = /^(\d{1,2})\/(\d{4})$/.exec((c || '').trim()); return m ? m[2] + m[1].padStart(2, '0') : '000000'; };
   async function viewHistorico() {
-    return `<div class="view">
+    const folhas = await DB.list('folhas');
+    if (!folhas.length) return `<div class="view">
       <div class="view-title">Histórico de folhas</div>
       <p class="view-sub">Comparativo mês a mês entre as folhas conferidas.</p>
-      ${emptyState('📊', 'Ainda sem folhas conferidas', 'Quando você conferir e aprovar uma folha, ela fica guardada aqui.')}
-      <div class="notice">Aqui vai aparecer, a cada nova folha: quem <b>mudou de cargo</b>, quem <b>saiu</b> (estava na folha passada e sumiu), quem <b>entrou</b>, e variações de salário. Depende do motor de leitura de folha (próximo passo).</div>
+      ${emptyState('📊', 'Ainda sem folhas conferidas', 'Quando você conferir uma folha na aba Conferência, ela fica guardada aqui — e dá para re-auditar de graça sempre que o motor for atualizado.')}
     </div>`;
+    const [emps, convs] = await Promise.all([DB.list('empresas'), DB.list('convencoes')]);
+    const nomeEmp = id => { const e = emps.find(x => x.id === id); return e ? e.nome : '(empresa removida)'; };
+    const porEmp = {};
+    folhas.forEach(f => { (porEmp[f.empresaId] = porEmp[f.empresaId] || []).push(f); });
+    const cards = Object.keys(porEmp).map(empId => {
+      const lista = porEmp[empId].slice().sort((a, b) => compKey(b.competencia).localeCompare(compKey(a.competencia)));
+      const rows = lista.map(f => `
+        <div class="list-row">
+          <span><b>${Util.escape(f.competencia || '—')}</b><br>
+            <span class="mini">${(f.funcionarios || []).length} func. · conferida ${Util.formatDateBR((f.auditadaEm || '').slice(0, 10))}</span></span>
+          <span class="grow"></span>
+          <button class="btn sm" data-reaudit="${f.id}">🔁 Re-auditar</button>
+          <button class="iconbtn" data-del-folha="${f.id}" title="Excluir">🗑</button>
+        </div>`).join('');
+      return `<div class="card"><div class="list-row" style="border-bottom:1px solid var(--line)"><b>${Util.escape(nomeEmp(empId))}</b></div>${rows}</div>`;
+    }).join('');
+    return `<div class="view">
+      <div class="view-title">Histórico de folhas</div>
+      <p class="view-sub">Folhas já conferidas. <b>Re-auditar</b> roda o motor atualizado sem gastar leitura de PDF de novo.</p>
+      ${cards}
+      <div class="notice">🔒 As folhas ficam só neste aparelho (contêm CPF). Nada vai para o GitHub nem para a nuvem.</div>
+    </div>`;
+  }
+  async function reauditarFolha(folhaId) {
+    const folha = await DB.get('folhas', folhaId);
+    if (!folha) return toast('Folha não encontrada', 'err');
+    const emp = folha.empresaId ? await DB.get('empresas', folha.empresaId) : null;
+    const convs = await DB.list('convencoes');
+    const vinc = emp ? (emp.convencaoIds || []).map(id => convs.find(c => c.id === id)).filter(Boolean) : [];
+    if (!vinc.length) return toast('Empresa sem convenção vinculada — vincule na aba Empresas', 'warn');
+    const conv = vinc[0];
+    const cfg = await DB.getConfig();
+    const rel = Audit.run(folha, conv, cfg);
+    const html = relatorioHtml(rel);
+    const body = openModal(`
+      <div class="mh"><h3>Re-auditoria — ${Util.escape(folha.competencia || '')}</h3><button class="iconbtn" data-close>✕</button></div>
+      ${vinc.length > 1 ? '<div class="notice" style="margin-bottom:10px">Empresa com mais de uma convenção — auditei pela primeira.</div>' : ''}
+      <div class="fab-row no-print"><button class="btn primary" id="rel_pdf2">🖨️ Salvar / Imprimir PDF</button></div>
+      ${html}`);
+    const b = body.querySelector('#rel_pdf2');
+    if (b) b.addEventListener('click', () => salvarPdf(html));
   }
   async function viewDuvidas() {
     return `<div class="view">
@@ -1576,12 +1647,17 @@ const IA = (function () {
      EVENTOS (delegação)
   ============================================================ */
   document.addEventListener('click', async (ev) => {
-    const t = ev.target.closest('[data-go],[data-close],[data-open-conv],[data-new-sind],[data-edit-sind],[data-del-sind],[data-save-sind],[data-new-conv],[data-import-conv],[data-edit-conv],[data-del-conv],[data-save-conv],[data-regras],[data-add-piso],[data-add-est],[data-add-ben],[data-rm-row],[data-save-regras],[data-aprov],[data-new-emp],[data-edit-emp],[data-del-emp],[data-save-emp],[data-conf-emp],[data-conv],[data-toggle],[data-export],[data-new-clt],[data-config],[data-save-config],[data-mediador],[data-mediador-open],[data-mediador-update],[data-seed-demo]');
+    const t = ev.target.closest('[data-go],[data-close],[data-open-conv],[data-new-sind],[data-edit-sind],[data-del-sind],[data-save-sind],[data-new-conv],[data-import-conv],[data-edit-conv],[data-del-conv],[data-save-conv],[data-regras],[data-add-piso],[data-add-est],[data-add-ben],[data-rm-row],[data-save-regras],[data-aprov],[data-new-emp],[data-edit-emp],[data-del-emp],[data-save-emp],[data-conf-emp],[data-conv],[data-toggle],[data-export],[data-new-clt],[data-config],[data-save-config],[data-mediador],[data-mediador-open],[data-mediador-update],[data-seed-demo],[data-reaudit],[data-del-folha]');
     if (!t) return;
 
     // navegação
     if (t.dataset.go) return go(t.dataset.go);
     if (t.hasAttribute('data-seed-demo')) return seedDemo();
+    if (t.dataset.reaudit) return reauditarFolha(t.dataset.reaudit);
+    if (t.dataset.delFolha) {
+      if (confirm('Excluir esta folha do histórico? Ela contém dados do cliente e não dá para desfazer.')) { await DB.remove('folhas', t.dataset.delFolha); toast('Folha excluída'); render(); }
+      return;
+    }
     if (t.hasAttribute('data-export')) return exportBackup();
     if (t.hasAttribute('data-close')) return closeModal();
     if (t.dataset.openConv) { go('convencoes'); return; }
@@ -1782,6 +1858,19 @@ const IA = (function () {
     // mescla regras importadas sobre a estrutura padrão (garante todos os campos)
     rec.regras = Object.assign(Schema.emptyRegras(), c.regras || {});
     if (!rec.uf) rec.uf = Util.parseUF(rec.abrangencia);
+    // dedupe: mesma convenção já cadastrada (mesmo sindicato + nº de registro OU título)?
+    // Atualiza no lugar — preserva o id, então o vínculo da empresa e o histórico continuam valendo.
+    const reg = (c.numeroRegistro || '').trim();
+    const existente = opts.substituir === false ? null : (await DB.where('convencoes', x =>
+      !x.arquivada && x.sindicatoId === sind.id &&
+      ((reg && (x.numeroRegistro || '').trim() === reg) || (x.titulo || '') === (c.titulo || ''))
+    ))[0];
+    if (existente) {
+      rec.aprovada = existente.aprovada;   // não rebaixa uma convenção já aprovada
+      const saved = await DB.update('convencoes', existente.id, rec);
+      if (!opts.silent) { toast('Convenção atualizada no lugar ✓ (vínculos preservados)', 'ok'); render(); }
+      return saved;
+    }
     const saved = await DB.add('convencoes', rec);
     if (!opts.silent) { toast('Convenção importada ✓ — revise e aprove', 'ok'); render(); }
     return saved;
@@ -1822,7 +1911,8 @@ const IA = (function () {
       try {
         const bundle = JSON.parse(await f.text());
         const old = await DB.get('convencoes', oldId);
-        const novo = await importConvencao(bundle, { silent: true });
+        // aqui queremos SEMPRE uma convenção nova (a antiga vai para o histórico), então não deduplica
+        const novo = await importConvencao(bundle, { silent: true, substituir: false });
         if (!novo) return;
         const emps = await DB.where('empresas', e => (e.convencaoIds || []).includes(oldId));
         for (const e of emps) {

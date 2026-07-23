@@ -1,7 +1,7 @@
 /* sw.js — cache para funcionar offline (estratégia network-first).
    Sempre tenta a rede primeiro (pega a versão nova quando online) e usa o
    cache como reserva quando estiver offline. */
-const CACHE = 'folha-certa-v3';
+const CACHE = 'folha-certa-v4';
 const ASSETS = [
   './',
   './index.html',

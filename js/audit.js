@@ -24,7 +24,15 @@ const Audit = (function () {
     return pisos.find(p => c && norm(p.funcao) && (c.includes(norm(p.funcao)) || norm(p.funcao).includes(c))) || null;
   }
   function contribAssistencial(regras) {
-    return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && x.percentual);
+    return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && (x.percentual || x.cronograma));
+  }
+  // percentual da assistencial na competência (cronograma [{competencia:"06/2026",percentual:2}] tem prioridade)
+  function pctAssistencial(assist, competencia) {
+    if (assist && Array.isArray(assist.cronograma) && competencia) {
+      const m = assist.cronograma.find(x => (x.competencia || '') === competencia);
+      if (m && m.percentual != null) return money(m.percentual);
+    }
+    return money(assist && assist.percentual);
   }
 
   function run(folha, conv, config) {
@@ -48,14 +56,31 @@ const Audit = (function () {
       const nome = f.nome;
       const sal = money(f.salario);
 
-      // 1) PISO
+      // 0) PRÓ-LABORE / SÓCIO / AUTÔNOMO — não é celetista, fica fora da conferência CLT.
+      //    Detecta por: (a) campo "vinculo" lido pela IA, (b) cargo/situação de sócio/titular
+      //    (com \b pra não casar "social"), (c) rubrica PRÓ-LABORE na folha (sinal mais forte).
+      const vinc = norm(f.vinculo);
+      const ehProLabore =
+        /pro.?labore|contribuinte individual|autonom|s[óo]ci[oa]|titular|diretor/.test(vinc)
+        || /\b(s[óo]ci[oa]|titular)\b/.test(norm(f.cargo) + ' ' + norm(f.situacao))
+        || !!acharRubrica(f, /pro.?labore/);
+      if (ehProLabore) {
+        add('alerta', 'Pró-labore / sócio — fora da conferência CLT',
+          `${nome}: não é celetista, então piso, triênio, quebra de caixa e horas extras não se aplicam. Confira apenas INSS/IRRF pelas regras de contribuinte individual.`, nome);
+        return;
+      }
+
+      // 1) PISO (proporcional às horas contratadas quando a jornada é reduzida)
       const piso = pisoAplicavel(regras, f.cargo);
       if (piso && money(piso.valor)) {
-        if (sal < money(piso.valor) - 0.01) {
+        const h = money(f.horasMes);
+        const fator = (h > 0 && h < 219) ? h / 220 : 1;   // 220h = jornada cheia (44h)
+        const pisoEsp = round2(money(piso.valor) * fator);
+        if (sal < pisoEsp - 0.01) {
           add('erro', 'Salário abaixo do piso',
-            `Piso da convenção: ${brl(piso.valor)}. Corrigir o salário-base.`, nome, money(piso.valor) - sal);
+            `${nome}: salário ${brl(sal)} < piso${fator < 1 ? ' proporcional a ' + Math.round(h) + 'h' : ''} ${brl(pisoEsp)}${fator < 1 ? ' (piso cheio ' + brl(piso.valor) + ')' : ''}. Corrigir o salário-base.`, nome, pisoEsp - sal);
         } else {
-          add('conforme', 'Salário conforme o piso', `Todos ≥ ${brl(piso.valor)}.`, nome);
+          add('conforme', 'Salário conforme o piso', `Salário ≥ piso (proporcional às horas quando a jornada é reduzida).`, nome);
         }
       } else {
         add('alerta', 'Função sem piso mapeado',
@@ -72,18 +97,19 @@ const Audit = (function () {
         add('conforme', 'Adicional noturno com reflexo em DSR', 'Reflexo do noturno presente.', nome);
       }
 
-      // 3) CONTRIBUIÇÃO ASSISTENCIAL
+      // 3) CONTRIBUIÇÃO ASSISTENCIAL (percentual pode variar por mês — usa a competência)
       if (assist) {
-        const esperado = round2(sal * money(assist.percentual) / 100);
+        const pct = pctAssistencial(assist, folha.competencia);
+        const esperado = round2(sal * pct / 100);
         const rub = acharRubrica(f, /assistenc|contribui.*sindic|sindical|negocial/, 'D');
         if (!rub) {
           add('alerta', 'Contribuição assistencial não descontada',
-            `A CCT prevê ${assist.percentual}% (${brl(esperado)}). Verificar direito de oposição ou lançamento.`, nome, esperado);
+            `A CCT prevê ${pct}% nesta competência (${brl(esperado)}). Verificar direito de oposição ou lançamento.`, nome, esperado);
         } else if (Math.abs(money(rub.valor) - esperado) > 0.05) {
           add('erro', 'Contribuição assistencial com valor divergente',
-            `CCT prevê ${assist.percentual}% = ${brl(esperado)}. Na folha: "${rub.descricao.trim()}" = ${brl(rub.valor)}. Diferença ${brl(Math.abs(esperado - money(rub.valor)))}/empregado.`, nome, esperado - money(rub.valor));
+            `CCT prevê ${pct}% em ${folha.competencia || 'nesta competência'} = ${brl(esperado)}. Na folha: "${rub.descricao.trim()}" = ${brl(rub.valor)}. Diferença ${brl(Math.abs(esperado - money(rub.valor)))}/empregado.`, nome, esperado - money(rub.valor));
         } else {
-          add('conforme', 'Contribuição assistencial correta', `${assist.percentual}% aplicado.`, nome);
+          add('conforme', 'Contribuição assistencial correta', `${pct}% aplicado nesta competência.`, nome);
         }
       }
 

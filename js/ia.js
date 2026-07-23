@@ -100,12 +100,15 @@ const IA = (function () {
       '  "totais": {"proventos": number, "descontos": number, "liquido": number, "baseFGTS": number, "valorFGTS": number, "inssSegurados": number, "inssEmpresa": number},\n' +
       '  "funcionarios": [{\n' +
       '    "matricula": string, "nome": string, "cpf": string, "cargo": string, "cbo": string,\n' +
-      '    "admissao": "AAAA-MM-DD", "situacao": string, "salario": number, "horasMes": number,\n' +
+      '    "admissao": "AAAA-MM-DD", "situacao": string, "vinculo": string, "salario": number, "horasMes": number,\n' +
       '    "rubricas": [{"cod": string, "descricao": string, "referencia": number, "valor": number, "tipo": "P"|"D"|"I"}],\n' +
       '    "proventos": number, "descontos": number, "liquido": number, "baseINSS": number, "baseFGTS": number, "valorFGTS": number\n' +
       '  }]\n' +
       '}\n\n' +
-      'tipo da rubrica: "P" provento, "D" desconto, "I" informativa. Valores em número (ponto decimal). ' +
+      'tipo da rubrica: "P" provento, "D" desconto, "I" informativa. Valores em número (ponto decimal).\n' +
+      '"vinculo": tipo de vínculo do trabalhador. Use "pro-labore" se for sócio/diretor/titular com retirada de pró-labore ' +
+      '(indícios: rubrica "PRÓ-LABORE", cargo "SÓCIO"/"DIRETOR"/"TITULAR", contribuinte individual, ausência de FGTS/INSS de empregado); ' +
+      'senão use "clt" (ou o que o documento indicar, ex.: "estagiario", "aprendiz"). "horasMes": horas mensais CONTRATADAS (220 para 44h; menor se jornada reduzida/parcial).\n' +
       'Transcreva TODOS os funcionários e TODAS as rubricas exatamente como no documento. Não invente dados.';
     const content = [doc(base64pdf), { type: 'text', text: 'Extraia a folha no JSON pedido.' }];
     return extrairJSON(await chamar(cfg, system, content, 24000));
