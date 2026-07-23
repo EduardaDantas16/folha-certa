@@ -159,9 +159,10 @@ textarea{resize:vertical;min-height:88px}
   box-shadow:0 -2px 14px rgba(11,33,64,.06);
 }
 .navitem{
-  border:none;background:none;cursor:pointer;flex:1;
+  border:none;background:none;cursor:pointer;flex:1;min-width:0;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  color:var(--muted);font-size:10.5px;font-weight:600;padding:2px;
+  color:var(--muted);font-size:10px;font-weight:600;padding:2px 1px;
+  text-align:center;line-height:1.1;
 }
 .navitem .i{font-size:19px;line-height:1}
 .navitem.on{color:var(--navy)}
@@ -1113,7 +1114,7 @@ const PDFConvert = (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const app = $('#app');
 
-  const APP_VERSION = 'v16 · 23/07/2026';   // aparece no rodapé do menu ☰
+  const APP_VERSION = 'v17 · 23/07/2026';   // aparece no rodapé do menu ☰
 
   const NAV = [
     { id: 'painel', label: 'Painel', icon: '🏠', primary: true },
@@ -1121,7 +1122,7 @@ const PDFConvert = (function () {
     { id: 'convencoes', label: 'Convenções', icon: '📄', primary: true },
     { id: 'empresas', label: 'Empresas', icon: '🏢', primary: true },
     { id: 'conferencia', label: 'Conferência', icon: '✅', primary: true },
-    { id: 'conversor', label: 'Conversor PDF→JSON', icon: '🔄', primary: false },
+    { id: 'conversor', label: 'Conversor PDF→JSON', short: 'Conversor', icon: '🔄', primary: true },
     { id: 'historico', label: 'Histórico', icon: '📊', primary: true },
     { id: 'duvidas', label: 'Dúvidas', icon: '💬', primary: false },
   ];
@@ -1156,7 +1157,7 @@ const PDFConvert = (function () {
     const bn = $('#bottomnav');
     bn.innerHTML = NAV.filter(n => n.primary).map(n => `
       <button class="navitem ${state.view === n.id ? 'on' : ''}" data-go="${n.id}">
-        <span class="i">${n.icon}</span>${n.label}
+        <span class="i">${n.icon}</span>${n.short || n.label}
       </button>`).join('');
     const dn = $('#drawerNav');
     dn.innerHTML = NAV.map(n => `
