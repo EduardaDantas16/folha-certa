@@ -1,18 +1,21 @@
-/* sw.js — cache básico para funcionar offline (app shell) */
-const CACHE = 'folha-certa-v1';
+/* sw.js — cache para funcionar offline (estratégia network-first).
+   Sempre tenta a rede primeiro (pega a versão nova quando online) e usa o
+   cache como reserva quando estiver offline. */
+const CACHE = 'folha-certa-v2';
 const ASSETS = [
   './',
   './index.html',
   './assets/styles.css',
-  './js/db.js',
-  './js/schema.js',
-  './js/app.js',
+  './js/db.js?v=8',
+  './js/schema.js?v=8',
+  './js/audit.js?v=8',
+  './js/app.js?v=8',
   './manifest.webmanifest',
   './assets/icon.svg',
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {}).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -20,10 +23,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
+    fetch(e.request).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;
-    }).catch(() => hit))
+    }).catch(() => caches.match(e.request))
   );
 });

@@ -727,7 +727,7 @@
     /* ---- Convenções ---- */
     if (t.hasAttribute('data-new-conv')) {
       const sinds = await DB.list('sindicatos');
-      return void openModal(formConvencao(null, sinds));
+      return void wireConvForm(openModal(formConvencao(null, sinds)), null);
     }
     if (t.dataset.editConv) {
       const [c, sinds] = await Promise.all([DB.get('convencoes', t.dataset.editConv), DB.list('sindicatos')]);
