@@ -242,9 +242,11 @@
       </div>
       <div class="field"><label>PDF da convenção</label>
         <div class="drop ${c.pdfName ? 'has' : ''}" id="c_drop">
-          ${c.pdfName ? '📎 ' + Util.escape(c.pdfName) : '<b>Toque para anexar</b> o PDF da CCT/ACT<br><span class="mini">Usado depois pela IA para absorver as regras</span>'}
+          ${c.pdfName ? '📎 ' + Util.escape(c.pdfName) : '<b>Toque para anexar</b> o PDF da CCT/ACT'}
         </div>
         <input id="c_pdf" type="file" accept="application/pdf" hidden>
+        <button class="btn gold block sm" id="c_absorver" disabled style="margin-top:8px">🤖 Absorver PDF com IA (preenche tudo)</button>
+        <div class="mini" id="c_ia_status" style="margin-top:6px"></div>
       </div>
       <button class="btn primary block" data-save-conv="${c.id || ''}">Salvar convenção</button>`;
   }
@@ -425,8 +427,10 @@
 
         <div class="card">
           <div class="field"><label>Folha em PDF</label>
-            <div class="drop" id="cf_drop"><b>Toque para anexar</b> a folha de pagamento (PDF)<br><span class="mini">A leitura automática entra no próximo passo</span></div>
+            <div class="drop" id="cf_drop"><b>Toque para anexar</b> a folha de pagamento (PDF)</div>
             <input id="cf_pdf" type="file" accept="application/pdf" hidden>
+            <button class="btn gold block sm" id="cf_absorver" disabled style="margin-top:8px">🤖 Ler folha com IA e auditar</button>
+            <div class="mini" id="cf_ia_status" style="margin-top:6px"></div>
           </div>
           <div class="field"><label>Lançamentos variáveis do mês</label>
             <textarea id="cf_var" placeholder="Ex.: João - 10h extras 50%; Maria - 2 faltas; Pedro afastado desde 05/07 (INSS)..."></textarea>
@@ -553,9 +557,31 @@
     $('#cf_pdf').addEventListener('change', e => {
       const f = e.target.files[0]; if (!f) return;
       $('#cf_drop').classList.add('has'); $('#cf_drop').innerHTML = '📎 ' + Util.escape(f.name);
+      const b = $('#cf_absorver'); if (b) b.disabled = false;
     });
     $('#cf_run').addEventListener('click', () => rodarConferencia($('#cf_emp').value, $('#cf_var').value));
     $('#cf_import').addEventListener('click', importFolhaPick);
+    const abs = $('#cf_absorver');
+    if (abs) abs.addEventListener('click', () => absorverFolhaPDF($('#cf_pdf').files[0]));
+  }
+  async function absorverFolhaPDF(file) {
+    const btn = $('#cf_absorver'), status = $('#cf_ia_status');
+    if (!file) return;
+    const cfg = await DB.getConfig();
+    if (!cfg.apiKey) { toast('Configure a chave da API em Configurações (menu ☰)', 'err'); return; }
+    btn.disabled = true; btn.textContent = '🤖 Lendo a folha... aguarde';
+    status.textContent = 'A IA está lendo a folha. Pode levar de 30s a 1,5 min se tiver muitos funcionários.';
+    try {
+      const b64 = await fileToBase64(file);
+      const folha = await IA.absorverFolha(b64, cfg);
+      btn.textContent = '✅ Lida — auditando';
+      status.innerHTML = '✅ Folha lida. Rodando a conferência...';
+      await importFolha(folha);
+      btn.textContent = '🤖 Ler folha com IA e auditar'; btn.disabled = false;
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--err)">Erro: ' + Util.escape(e.message) + '</span>';
+      btn.disabled = false; btn.textContent = '🤖 Tentar de novo';
+    }
   }
 
   /* ---- importar folha estruturada (JSON) e auditar ---- */
@@ -800,15 +826,56 @@
     if (['f_cnpj', 'e_cnpj'].includes(e.target.id)) e.target.value = Util.formatCNPJ(e.target.value);
   });
 
-  /* ---- form convenção: upload + save ---- */
+  /* ---- form convenção: upload + absorção por IA + save ---- */
+  let _convAbsorb = null;
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result).split(',')[1]);
+      r.onerror = () => rej(new Error('não consegui ler o arquivo'));
+      r.readAsDataURL(file);
+    });
+  }
   function wireConvForm(body, c) {
-    const drop = $('#c_drop'), pdf = $('#c_pdf');
+    _convAbsorb = null;
+    const drop = $('#c_drop'), pdf = $('#c_pdf'), absBtn = $('#c_absorver');
     if (drop) {
       drop.addEventListener('click', () => pdf.click());
       pdf.addEventListener('change', e => {
         const f = e.target.files[0]; if (!f) return;
         drop.classList.add('has'); drop.innerHTML = '📎 ' + Util.escape(f.name); drop.dataset.name = f.name;
+        if (absBtn) { absBtn.disabled = false; }
       });
+    }
+    if (absBtn) absBtn.addEventListener('click', () => absorverConvPDF(pdf.files[0]));
+  }
+  async function absorverConvPDF(file) {
+    const btn = $('#c_absorver'), status = $('#c_ia_status');
+    if (!file) return;
+    const cfg = await DB.getConfig();
+    if (!cfg.apiKey) { toast('Configure a chave da API em Configurações (menu ☰)', 'err'); return; }
+    btn.disabled = true; btn.textContent = '🤖 Lendo o PDF... aguarde';
+    status.textContent = 'A IA está lendo a convenção. Pode levar de 20s a 1 min.';
+    try {
+      const b64 = await fileToBase64(file);
+      const bundle = await IA.absorverConvencao(b64, cfg);
+      const conv = bundle.convencao || {};
+      const set = (id, v) => { const el = $(id); if (el && v != null && v !== '') el.value = v; };
+      set('#c_tit', conv.titulo); set('#c_reg', conv.numeroRegistro); set('#c_abr', conv.abrangencia);
+      set('#c_uf', (conv.uf || '').toUpperCase()); set('#c_vi', conv.vigenciaInicio); set('#c_vf', conv.vigenciaFim);
+      if ($('#c_base') && conv.dataBaseMes) $('#c_base').value = conv.dataBaseMes;
+      if (bundle.sindicato && bundle.sindicato.cnpj && $('#c_sind') && !$('#c_sind').value) {
+        // se nenhum sindicato escolhido, tenta casar pelo CNPJ absorvido
+        const cnpj = (bundle.sindicato.cnpj || '').replace(/\D/g, '');
+        const s = (await DB.where('sindicatos', x => (x.cnpj || '') === cnpj))[0];
+        if (s) $('#c_sind').value = s.id;
+      }
+      _convAbsorb = { regras: Object.assign(Schema.emptyRegras(), conv.regras || {}) };
+      status.innerHTML = '✅ <b>Preenchido pela IA.</b> Confira os campos e salve. Depois abra ⚙️ Regras para revisar.';
+      btn.textContent = '✅ Absorvido — pode salvar';
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--err)">Erro: ' + Util.escape(e.message) + '</span>';
+      btn.disabled = false; btn.textContent = '🤖 Tentar absorver de novo';
     }
   }
   async function saveConv(id) {
@@ -827,9 +894,11 @@
       vigenciaFim: $('#c_vf').value,
       pdfName: (drop && drop.dataset.name) || (await maybeKeepPdf(id)),
     };
-    if (id) await DB.update('convencoes', id, data);
-    else { data.regras = Schema.emptyRegras(); data.aprovada = false; await DB.add('convencoes', data); }
-    closeModal(); toast('Convenção salva', 'ok'); render();
+    const regrasIA = _convAbsorb && _convAbsorb.regras;
+    if (id) await DB.update('convencoes', id, regrasIA ? Object.assign({}, data, { regras: regrasIA, aprovada: false }) : data);
+    else { data.regras = regrasIA || Schema.emptyRegras(); data.aprovada = false; await DB.add('convencoes', data); }
+    _convAbsorb = null;
+    closeModal(); toast(regrasIA ? 'Convenção absorvida ✓ revise as regras' : 'Convenção salva', 'ok'); render();
   }
   async function maybeKeepPdf(id) { if (!id) return ''; const c = await DB.get('convencoes', id); return c ? c.pdfName || '' : ''; }
 
@@ -950,20 +1019,35 @@
       <div class="mh"><h3>Configurações</h3><button class="iconbtn" data-close>✕</button></div>
       <div class="field"><label>Salário mínimo nacional vigente (R$)</label>
         <input id="cfg_sm" inputmode="decimal" value="${cfg.salarioMinimo ?? ''}" placeholder="Ex.: 1518,00">
-        <div class="hint">Usado no regime CLT (sem convenção). Atualize a cada virada de ano — o piso do regime CLT é ajustado automaticamente.</div>
+        <div class="hint">Usado no regime CLT (sem convenção). Atualize a cada virada de ano.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-hd" style="margin-top:0">Inteligência artificial (ler PDFs)</div>
+      <div class="field"><label>Chave da API da Anthropic</label>
+        <input id="cfg_key" type="password" value="${Util.escape(cfg.apiKey || '')}" placeholder="sk-ant-...">
+        <div class="hint">Fica salva só neste aparelho. Pegue em console.anthropic.com. Usada para o PDF preencher os campos sozinho.</div>
+      </div>
+      <div class="field"><label>Modelo</label>
+        <select id="cfg_model">
+          <option value="claude-opus-4-8" ${(cfg.iaModel || 'claude-opus-4-8') === 'claude-opus-4-8' ? 'selected' : ''}>Opus 4.8 (melhor leitura)</option>
+          <option value="claude-sonnet-5" ${cfg.iaModel === 'claude-sonnet-5' ? 'selected' : ''}>Sonnet 5 (mais barato)</option>
+        </select>
       </div>
       <button class="btn primary block" data-save-config>Salvar</button>`);
   }
   async function saveConfig() {
     const sm = Util.parseNum($('#cfg_sm').value);
-    if (!sm) return toast('Informe o salário mínimo', 'err');
-    await DB.setConfig({ salarioMinimo: sm });
-    // atualiza o piso dos regimes CLT existentes
-    const clts = await DB.where('convencoes', c => c.tipo === 'clt');
-    for (const c of clts) {
-      const r = c.regras || Schema.cltRegras(sm);
-      if (r.pisos && r.pisos[0]) r.pisos[0].valor = sm; else r.pisos = [{ funcao: 'Salário mínimo nacional', valor: sm, jornada: '44h semanais' }];
-      await DB.update('convencoes', c.id, { regras: r });
+    const apiKey = ($('#cfg_key').value || '').trim();
+    const iaModel = $('#cfg_model').value;
+    await DB.setConfig({ salarioMinimo: sm || (await DB.getConfig()).salarioMinimo, apiKey, iaModel });
+    // atualiza o piso dos regimes CLT existentes (só se o mínimo foi informado)
+    if (sm) {
+      const clts = await DB.where('convencoes', c => c.tipo === 'clt');
+      for (const c of clts) {
+        const r = c.regras || Schema.cltRegras(sm);
+        if (r.pisos && r.pisos[0]) r.pisos[0].valor = sm; else r.pisos = [{ funcao: 'Salário mínimo nacional', valor: sm, jornada: '44h semanais' }];
+        await DB.update('convencoes', c.id, { regras: r });
+      }
     }
     closeModal(); toast('Configurações salvas', 'ok'); render();
   }
@@ -1016,5 +1100,5 @@
 
   /* boot */
   render();
-  window.FC = { go, DB, toast, Util, Schema, Audit, importConvencao, importFolha, exportBackup, createCltRegime, openMediadorModal }; // atalho p/ debug/console
+  window.FC = { go, DB, toast, Util, Schema, Audit, IA, importConvencao, importFolha, exportBackup, createCltRegime, openMediadorModal }; // atalho p/ debug/console
 })();

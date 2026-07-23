@@ -11,6 +11,7 @@ $css    = [System.IO.File]::ReadAllText((Join-Path $dir 'assets\styles.css'))
 $db     = [System.IO.File]::ReadAllText((Join-Path $dir 'js\db.js'))
 $schema = [System.IO.File]::ReadAllText((Join-Path $dir 'js\schema.js'))
 $audit  = [System.IO.File]::ReadAllText((Join-Path $dir 'js\audit.js'))
+$ia     = [System.IO.File]::ReadAllText((Join-Path $dir 'js\ia.js'))
 $app    = [System.IO.File]::ReadAllText((Join-Path $dir 'js\app.js'))
 
 $body = @'
@@ -38,6 +39,7 @@ $styleTag = '<style>' + $nl + $css + $nl + '</style>'
 $scripts = '<script>' + $nl + $db + $nl + '</script>' + $nl +
            '<script>' + $nl + $schema + $nl + '</script>' + $nl +
            '<script>' + $nl + $audit + $nl + '</script>' + $nl +
+           '<script>' + $nl + $ia + $nl + '</script>' + $nl +
            '<script>' + $nl + $app + $nl + '</script>'
 
 # --- Standalone completo ---
