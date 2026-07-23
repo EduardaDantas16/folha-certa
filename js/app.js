@@ -5,7 +5,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const app = $('#app');
 
-  const APP_VERSION = 'v17 · 23/07/2026';   // aparece no rodapé do menu ☰
+  const APP_VERSION = 'v18 · 23/07/2026';   // aparece no rodapé do menu ☰
 
   const NAV = [
     { id: 'painel', label: 'Painel', icon: '🏠', primary: true },
@@ -13,7 +13,7 @@
     { id: 'convencoes', label: 'Convenções', icon: '📄', primary: true },
     { id: 'empresas', label: 'Empresas', icon: '🏢', primary: true },
     { id: 'conferencia', label: 'Conferência', icon: '✅', primary: true },
-    { id: 'conversor', label: 'Conversor PDF→JSON', short: 'Conversor', icon: '🔄', primary: true },
+    { id: 'conversor', label: 'Conversor PDF→JSON', icon: '🔄', primary: false },
     { id: 'historico', label: 'Histórico', icon: '📊', primary: true },
     { id: 'duvidas', label: 'Dúvidas', icon: '💬', primary: false },
   ];
@@ -48,7 +48,7 @@
     const bn = $('#bottomnav');
     bn.innerHTML = NAV.filter(n => n.primary).map(n => `
       <button class="navitem ${state.view === n.id ? 'on' : ''}" data-go="${n.id}">
-        <span class="i">${n.icon}</span>${n.short || n.label}
+        <span class="i">${n.icon}</span>${n.label}
       </button>`).join('');
     const dn = $('#drawerNav');
     dn.innerHTML = NAV.map(n => `
@@ -114,7 +114,10 @@
           </div>` : ''}
 
         <div class="section-hd">Atalhos</div>
-        <div class="card tap" data-go="duvidas"><div class="row between">
+        <div class="card tap" data-go="conversor" title="Clique aqui para converter sua folha em JSON e auditar"><div class="row between">
+          <div><h3>🔄 Converter folha (PDF → JSON)</h3><div class="mini">Lê a folha no aparelho, grátis, e manda pra auditoria</div></div><span>›</span>
+        </div></div>
+        <div class="card tap" data-go="duvidas" title="Pergunte à IA o que o funcionário tem direito, com base na convenção"><div class="row between">
           <div><h3>💬 Tirar dúvida da convenção</h3><div class="mini">Pergunte o que o funcionário tem direito</div></div><span>›</span>
         </div></div>
       </div>`;
