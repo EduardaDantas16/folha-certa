@@ -612,7 +612,7 @@
   ============================================================ */
   let _convTexto = '';
   async function viewConversor() {
-    const ok = typeof window.PDFConvert !== 'undefined' && typeof window.pdfjsLib !== 'undefined';
+    const ok = typeof PDFConvert !== 'undefined' && typeof pdfjsLib !== 'undefined';
     return `<div class="view">
       <div class="view-title">Conversor de folha (PDF → JSON)</div>
       <p class="view-sub">Grátis e sem IA: o PDF é lido aqui no aparelho, nada é enviado pra internet.</p>
@@ -636,7 +636,7 @@
   }
   async function converterPDF(file) {
     const status = $('#cv_status'), drop = $('#cv_drop');
-    if (typeof window.PDFConvert === 'undefined') { toast('Leitor de PDF indisponível — abra pelo site', 'err'); return; }
+    if (typeof PDFConvert === 'undefined') { toast('Leitor de PDF indisponível — recarregue a página (Ctrl+Shift+R)', 'err'); return; }
     drop.classList.add('has'); drop.innerHTML = '📎 ' + Util.escape(file.name);
     $('#cv_out').innerHTML = '';
     status.textContent = 'Lendo o PDF no aparelho...';
