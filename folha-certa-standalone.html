@@ -514,7 +514,17 @@ const Util = {
   },
   parseNum(v) {
     if (v === '' || v === null || v === undefined) return null;
-    const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+    let s = String(v).trim().replace(/R\$/gi, '').replace(/\s/g, '');
+    if (!s) return null;
+    if (s.indexOf(',') >= 0) {
+      // formato brasileiro: ponto = milhar, vírgula = decimal (1.659,79)
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+      // só pontos formando milhar sem centavos (1.659) -> remove os pontos
+      s = s.replace(/\./g, '');
+    }
+    // senão, o ponto é separador decimal (1659.79) e fica como está
+    const n = parseFloat(s);
     return isNaN(n) ? null : n;
   },
 
