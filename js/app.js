@@ -11,6 +11,7 @@
     { id: 'convencoes', label: 'Convenções', icon: '📄', primary: true },
     { id: 'empresas', label: 'Empresas', icon: '🏢', primary: true },
     { id: 'conferencia', label: 'Conferência', icon: '✅', primary: true },
+    { id: 'conversor', label: 'Conversor PDF→JSON', icon: '🔄', primary: false },
     { id: 'historico', label: 'Histórico', icon: '📊', primary: true },
     { id: 'duvidas', label: 'Dúvidas', icon: '💬', primary: false },
   ];
@@ -431,6 +432,7 @@
             <input id="cf_pdf" type="file" accept="application/pdf" hidden>
             <button class="btn gold block sm" id="cf_absorver" disabled style="margin-top:8px">🤖 Ler folha com IA e auditar</button>
             <div class="mini" id="cf_ia_status" style="margin-top:6px"></div>
+            <div class="notice" style="margin-top:8px">💡 Quer <b>de graça</b>? O <a data-go="conversor" style="cursor:pointer;color:var(--navy);font-weight:700">Conversor PDF→JSON ›</a> lê a folha aqui no aparelho (sem IA, ideal para o Extrato Mensal).</div>
           </div>
           <div class="field"><label>Lançamentos variáveis do mês</label>
             <textarea id="cf_var" placeholder="Ex.: João - 10h extras 50%; Maria - 2 faltas; Pedro afastado desde 05/07 (INSS)..."></textarea>
@@ -605,6 +607,104 @@
     });
   }
 
+  /* ============================================================
+     CONVERSOR PDF → JSON (grátis, no aparelho, via pdf.js)
+  ============================================================ */
+  let _convTexto = '';
+  async function viewConversor() {
+    const ok = typeof window.PDFConvert !== 'undefined' && typeof window.pdfjsLib !== 'undefined';
+    return `<div class="view">
+      <div class="view-title">Conversor de folha (PDF → JSON)</div>
+      <p class="view-sub">Grátis e sem IA: o PDF é lido aqui no aparelho, nada é enviado pra internet.</p>
+      <div class="card">
+        <div class="field"><label>Folha em PDF</label>
+          <div class="drop" id="cv_drop"><b>Toque para anexar</b> a folha (PDF com texto — não escaneado)</div>
+          <input id="cv_pdf" type="file" accept="application/pdf" hidden>
+          <div class="mini" id="cv_status" style="margin-top:8px"></div>
+        </div>
+        <div class="hint">Feito para o <b>Extrato Mensal</b> do sistema. Em PDF escaneado (imagem) o texto não sai — nesse caso use a leitura por IA na Conferência.</div>
+      </div>
+      <div id="cv_out"></div>
+      ${ok ? '' : '<div class="notice">O leitor de PDF (pdf.js) não carregou nesta versão. Abra o app pelo site (GitHub Pages) para usar o conversor grátis.</div>'}
+    </div>`;
+  }
+  function wireConversor() {
+    const drop = $('#cv_drop'); if (!drop) return;
+    const inp = $('#cv_pdf');
+    drop.addEventListener('click', () => inp.click());
+    inp.addEventListener('change', e => { const f = e.target.files[0]; if (f) converterPDF(f); });
+  }
+  async function converterPDF(file) {
+    const status = $('#cv_status'), drop = $('#cv_drop');
+    if (typeof window.PDFConvert === 'undefined') { toast('Leitor de PDF indisponível — abra pelo site', 'err'); return; }
+    drop.classList.add('has'); drop.innerHTML = '📎 ' + Util.escape(file.name);
+    $('#cv_out').innerHTML = '';
+    status.textContent = 'Lendo o PDF no aparelho...';
+    try {
+      const buf = await file.arrayBuffer();
+      const txt = await PDFConvert.extrairTexto(buf, (p, n) => { status.textContent = `Lendo página ${p}/${n}...`; });
+      const r = PDFConvert.parseFolha(txt);
+      _convTexto = r.texto;
+      status.textContent = '';
+      renderConversao(r);
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--err)">Erro ao ler o PDF: ' + Util.escape(e.message) + '</span>';
+    }
+  }
+  function renderConversao(r) {
+    const f = r.folha;
+    const json = JSON.stringify(f, null, 2);
+    const alertasHtml = r.alertas.length
+      ? `<div class="notice gold" style="margin-top:8px">⚠️ Confira:<br>${r.alertas.map(Util.escape).join('<br>')}</div>`
+      : '<div class="notice" style="margin-top:8px">✅ Sem pendências detectadas. Ainda assim, confira o JSON antes de auditar.</div>';
+    $('#cv_out').innerHTML = `
+      <div class="card">
+        <div class="section-hd">Resultado da conversão</div>
+        <div class="kv"><span>Empresa: <b>${Util.escape(f.empresaNome || '—')}</b></span><span>CNPJ: <b>${Util.formatCNPJ(f.empresaCnpj || '')}</b></span></div>
+        <div class="kv"><span>Competência: <b>${Util.escape(f.competencia || '—')}</b></span><span>Funcionários: <b>${f.funcionarios.length}</b></span></div>
+        <div class="kv"><span>Formato: <b>${Util.escape(r.formato)}</b></span></div>
+        ${alertasHtml}
+        <div class="fab-row" style="flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary" id="cv_baixar">⤓ Baixar JSON</button>
+          <button class="btn" id="cv_copiar">⧉ Copiar</button>
+          <button class="btn gold" id="cv_auditar">✅ Auditar esta folha</button>
+          <button class="btn ghost" id="cv_vertexto">📄 Ver texto extraído</button>
+        </div>
+        <div class="field" style="margin-top:10px"><label>JSON (edite se precisar antes de auditar)</label>
+          <textarea id="cv_json" spellcheck="false" style="min-height:260px;font-family:ui-monospace,monospace;font-size:12px">${Util.escape(json)}</textarea></div>
+        <div id="cv_texto" style="display:none"></div>
+      </div>`;
+    $('#cv_baixar').addEventListener('click', () => {
+      const nome = `folha-${(f.empresaNome || 'empresa').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)}-${(f.competencia || '').replace('/', '-')}.json`;
+      baixarArquivo(nome, $('#cv_json').value, 'application/json');
+      toast('JSON baixado ✓', 'ok');
+    });
+    $('#cv_copiar').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText($('#cv_json').value); toast('JSON copiado ✓', 'ok'); }
+      catch (e) { toast('Não consegui copiar — selecione o texto e copie manualmente', 'warn'); }
+    });
+    $('#cv_auditar').addEventListener('click', async () => {
+      let folha; try { folha = JSON.parse($('#cv_json').value); } catch (e) { return toast('JSON inválido: ' + e.message, 'err'); }
+      state.view = 'conferencia'; await render(); window.scrollTo(0, 0);
+      await importFolha(folha);
+    });
+    $('#cv_vertexto').addEventListener('click', () => {
+      const box = $('#cv_texto');
+      if (box.style.display === 'none') {
+        box.style.display = 'block';
+        box.innerHTML = `<div class="field" style="margin-top:10px"><label>Texto extraído do PDF (conferência)</label>
+          <textarea readonly spellcheck="false" style="min-height:200px;font-family:ui-monospace,monospace;font-size:11px">${Util.escape(_convTexto || '')}</textarea></div>`;
+      } else { box.style.display = 'none'; box.innerHTML = ''; }
+    });
+  }
+  function baixarArquivo(nome, conteudo, tipo) {
+    const blob = new Blob([conteudo], { type: tipo || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   /* ------------- helpers ------------- */
   function emptyState(em, t, p) {
     return `<div class="empty"><div class="em">${em}</div><h3 style="margin:10px 0 0">${t}</h3><p>${p}</p></div>`;
@@ -619,13 +719,15 @@
   /* ------------- render dispatcher ------------- */
   const VIEWS = {
     painel: viewPainel, sindicatos: viewSindicatos, convencoes: viewConvencoes,
-    empresas: viewEmpresas, conferencia: viewConferencia, historico: viewHistorico, duvidas: viewDuvidas,
+    empresas: viewEmpresas, conferencia: viewConferencia, conversor: viewConversor,
+    historico: viewHistorico, duvidas: viewDuvidas,
   };
   async function render(arg) {
     renderNav();
     app.innerHTML = '<div class="view"><div class="empty"><div class="em">⏳</div></div></div>';
     app.innerHTML = await VIEWS[state.view](arg);
     if (state.view === 'conferencia') wireConferencia();
+    if (state.view === 'conversor') wireConversor();
     if (state.view === 'duvidas') wireDuvidas();
   }
 

@@ -899,6 +899,190 @@ const IA = (function () {
 
 </script>
 <script>
+/* convert.js — conversor GRÁTIS de PDF para JSON, 100% no navegador (pdf.js).
+ * Não usa a IA nem manda nada pra internet: o PDF é lido localmente.
+ * Tem um parser dedicado ao "EXTRATO MENSAL" (sistema Totali) e um fallback
+ * genérico. Em PDF escaneado (imagem) o texto não sai — aí precisa da IA.
+ */
+const PDFConvert = (function () {
+  if (window.pdfjsLib) {
+    try { pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; } catch (e) {}
+  }
+
+  /* ---------- extração de texto, reconstruindo linhas pela posição ---------- */
+  async function extrairTexto(arrayBuffer, onProgress) {
+    if (!window.pdfjsLib) throw new Error('A biblioteca de leitura de PDF (pdf.js) não carregou. Recarregue a página.');
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+    const linhas = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      const itens = tc.items
+        .filter(it => it.str !== undefined)
+        .map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5] }));
+      agruparLinhas(itens).forEach(l => linhas.push(l));
+      if (onProgress) onProgress(p, pdf.numPages);
+    }
+    return linhas.join('\n');
+  }
+
+  // agrupa os pedaços de texto por linha (mesma coordenada Y) e ordena pela X
+  function agruparLinhas(itens) {
+    const buckets = [];
+    itens.forEach(it => {
+      let b = buckets.find(b => Math.abs(b.y - it.y) < 3.2);
+      if (!b) { b = { y: it.y, itens: [] }; buckets.push(b); }
+      b.itens.push(it);
+    });
+    buckets.sort((a, b) => b.y - a.y);
+    return buckets.map(b => b.itens.sort((a, b) => a.x - b.x).map(i => i.str).join(' ').replace(/[ \t]+/g, ' ').trim())
+      .filter(l => l.length);
+  }
+
+  /* ---------- correção de "embaralhamento" (fonte com ToUnicode quebrado) ---------- */
+  const PALAVRAS = ['salario', 'total', 'liquido', 'proventos', 'descontos', 'admiss', 'vinculo',
+    'funcionario', 'empresa', 'competencia', 'referencia', 'inss', 'fgts', 'horas', 'cargo',
+    'folha', 'pagamento', 'base', 'rubrica', 'valor', 'situacao', 'extrato'];
+  function pontua(txt) {
+    const t = txt.toLowerCase(); let s = 0;
+    for (const w of PALAVRAS) if (t.indexOf(w) >= 0) s++;
+    return s;
+  }
+  function deslocar(txt, k) {
+    let out = '';
+    for (let i = 0; i < txt.length; i++) {
+      const c = txt.charCodeAt(i);
+      if (c >= 65 && c <= 90) out += String.fromCharCode((c - 65 + k + 26 * 40) % 26 + 65);
+      else if (c >= 97 && c <= 122) out += String.fromCharCode((c - 97 + k + 26 * 40) % 26 + 97);
+      else out += txt[i];
+    }
+    return out;
+  }
+  function corrigirEmbaralhamento(txt) {
+    const base = pontua(txt);
+    if (base >= 4) return { texto: txt, deslocamento: 0, embaralhado: false };
+    let melhor = { k: 0, score: base };
+    for (let k = 1; k < 26; k++) {
+      const s = pontua(deslocar(txt.slice(0, 8000), k));
+      if (s > melhor.score) melhor = { k, score: s };
+    }
+    if (melhor.k && melhor.score >= 4) return { texto: deslocar(txt, melhor.k), deslocamento: melhor.k, embaralhado: true };
+    return { texto: txt, deslocamento: 0, embaralhado: false };
+  }
+
+  /* ---------- utilidades ---------- */
+  const RE_CNPJ = /(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/;
+  const RE_CPF = /(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/;
+  const RE_COMPET = /(0?[1-9]|1[0-2])\s*\/\s*(20\d{2})/;
+  const RE_DATA = /([0-3]?\d)\/([01]?\d)\/(\d{4})/;
+  const RE_MOEDA = /-?\d{1,3}(?:\.\d{3})*,\d{2}-?/;
+
+  function num(br) {
+    if (br == null) return null;
+    let s = ('' + br).trim();
+    const neg = /-$/.test(s) || /^-/.test(s);
+    s = s.replace(/-/g, '').replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(s);
+    if (isNaN(n)) return null;
+    return neg ? -n : n;
+  }
+  function soDigitos(s) { return (s || '').replace(/\D/g, ''); }
+  function dataISO(dstr) {
+    const m = RE_DATA.exec(dstr || '');
+    if (!m) return '';
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+
+  /* ---------- rubricas de uma linha (1 ou 2 colunas: provento à esq., desconto à dir.) ---------- */
+  function parseRubricas(l) {
+    const out = [];
+    const re = /(\d{1,5})\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})\s+([PD])(?=\s+\d|\s*$)/g;
+    let m;
+    while ((m = re.exec(l))) {
+      let meio = m[2].trim(), ref = null;
+      const tk = meio.split(/\s+/);
+      if (tk.length > 1 && /^[\d.:,%]+$/.test(tk[tk.length - 1]) && /\d/.test(tk[tk.length - 1])) { ref = tk.pop(); meio = tk.join(' '); }
+      out.push({ cod: m[1], descricao: meio, referencia: ref, valor: num(m[3]), tipo: m[4] });
+    }
+    return out;
+  }
+
+  /* ---------- parser dedicado ao EXTRATO MENSAL (Totali) ---------- */
+  function ehExtratoMensal(texto) {
+    return /extrato mensal/i.test(texto) || /^\s*Empr\.?:\s*\d+\s+.+Situa[çc]/im.test(texto);
+  }
+  function parseExtratoMensal(linhas) {
+    let empresaNome = '', empresaCnpj = '', competencia = '';
+    const funcs = [];
+    let cur = null;
+    const push = () => { if (cur) { funcs.push(cur); cur = null; } };
+
+    for (const l of linhas) {
+      let m;
+      if ((m = l.match(/^Empresa:\s*\d*\s*-?\s*(.+?)\s+P[áa]gina:/i))) { if (!empresaNome) empresaNome = m[1].trim(); continue; }
+      if (!empresaNome && (m = l.match(/^Empresa:\s*\d*\s*-?\s*(.+)$/i))) { empresaNome = m[1].trim(); continue; }
+      if ((m = l.match(/^CNPJ:\s*([\d.\/-]{14,})/i))) { if (!empresaCnpj) empresaCnpj = soDigitos(m[1]); continue; }
+      if ((m = l.match(/Compet[êe]ncia:\s*(\d{1,2}\/\d{4})/i))) { if (!competencia) competencia = m[1]; continue; }
+
+      if ((m = l.match(/^Empr\.?:\s*(\d+)\s+(.+?)\s+Situa[çc][ãa]o:\s*(.+?)\s+CPF:\s*([\d.\-]+)\s+Adm:\s*([\d\/]+)/i))) {
+        push();
+        cur = {
+          matricula: m[1], nome: m[2].trim(), situacao: m[3].trim(), cpf: soDigitos(m[4]), admissao: dataISO(m[5]),
+          cargo: '', cbo: '', vinculo: '', salario: null, horasMes: null, rubricas: [],
+          proventos: null, descontos: null, liquido: null, baseINSS: null, baseFGTS: null, valorFGTS: null,
+        };
+        continue;
+      }
+      if (!cur) continue;
+      if ((m = l.match(/^V[íi]nculo:\s*(.+?)\s+CC:.*?Horas\s*M[êe]s:\s*([\d.,]+)/i))) { cur.vinculo = m[1].trim(); cur.horasMes = num(m[2]); continue; }
+      if ((m = l.match(/^Cargo:\s*\d*\s*(.+?)\s+C\.?\s?B\.?\s?O\.?:?\s*(\d+)?.*?Sal[áa]rio:\s*([\d.,]+)/i))) { cur.cargo = m[1].trim(); cur.cbo = m[2] || ''; cur.salario = num(m[3]); continue; }
+      if ((m = l.match(/Proventos:\s*([\d.,]+).*?Descontos:\s*([\d.,]+).*?L[íi]quido:\s*(-?[\d.,]+)/i))) { cur.proventos = num(m[1]); cur.descontos = num(m[2]); cur.liquido = num(m[3]); continue; }
+      if ((m = l.match(/Base\s*INSS:\s*([\d.,]+).*?Base\s*FGTS:\s*([\d.,]+).*?Valor\s*FGTS:\s*([\d.,]+)/i))) { cur.baseINSS = num(m[1]); cur.baseFGTS = num(m[2]); cur.valorFGTS = num(m[3]); continue; }
+      if (/^(Data de pagamento|Assinatura|Sistema licenciado|C[áa]lculo:|EXTRATO MENSAL|ND:|NF:)/i.test(l)) continue;
+      const rub = parseRubricas(l);
+      if (rub.length) cur.rubricas.push(...rub);
+    }
+    push();
+    return { empresaNome, empresaCnpj, competencia, regime: 'normal', funcionarios: funcs };
+  }
+
+  /* ---------- fallback genérico (layouts desconhecidos) ---------- */
+  function parseGenerico(linhas, texto) {
+    let empresaCnpj = '', empresaNome = '', competencia = '';
+    const mC = texto.match(RE_CNPJ); if (mC) empresaCnpj = soDigitos(mC[1]);
+    const mK = texto.match(RE_COMPET); if (mK) competencia = `${mK[1].padStart(2, '0')}/${mK[2]}`;
+    for (const l of linhas.slice(0, 12)) {
+      if (l.length > 4 && !RE_CNPJ.test(l) && /[A-Za-zÀ-ÿ]/.test(l) && !/folha|extrato|p[áa]gina|competen/i.test(l)) { empresaNome = l.trim(); break; }
+    }
+    return { empresaNome, empresaCnpj, competencia, regime: 'normal', funcionarios: [] };
+  }
+
+  /* ---------- orquestra ---------- */
+  function parseFolha(textoBruto) {
+    const fix = corrigirEmbaralhamento(textoBruto);
+    const texto = fix.texto;
+    const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+    const alertas = [];
+    let folha, formato;
+    if (ehExtratoMensal(texto)) { folha = parseExtratoMensal(linhas); formato = 'Extrato Mensal (Totali)'; }
+    else { folha = parseGenerico(linhas, texto); formato = 'genérico'; }
+
+    if (fix.embaralhado) alertas.push(`O PDF vinha com as letras deslocadas (fonte fora do padrão); corrigi automaticamente (deslocamento ${fix.deslocamento}). Confira os nomes.`);
+    if (!folha.funcionarios.length) alertas.push('Não consegui separar os funcionários automaticamente. Provavelmente é um PDF escaneado (imagem) ou um layout diferente — confira o texto extraído, ajuste o JSON, ou use a leitura por IA.');
+    else {
+      const semSalario = folha.funcionarios.filter(f => !f.salario).length;
+      if (semSalario) alertas.push(`${semSalario} funcionário(s) sem salário-base identificado — confira no JSON.`);
+    }
+    if (!folha.competencia) alertas.push('Não achei a competência (MM/AAAA) — preencha no JSON.');
+
+    return { folha, texto, alertas, formato, embaralhado: fix.embaralhado };
+  }
+
+  return { extrairTexto, parseFolha, parseRubricas, corrigirEmbaralhamento, _num: num };
+})();
+
+</script>
+<script>
 /* app.js — roteador + telas do Folha Certa (MVP) */
 (function () {
   'use strict';
@@ -912,6 +1096,7 @@ const IA = (function () {
     { id: 'convencoes', label: 'Convenções', icon: '📄', primary: true },
     { id: 'empresas', label: 'Empresas', icon: '🏢', primary: true },
     { id: 'conferencia', label: 'Conferência', icon: '✅', primary: true },
+    { id: 'conversor', label: 'Conversor PDF→JSON', icon: '🔄', primary: false },
     { id: 'historico', label: 'Histórico', icon: '📊', primary: true },
     { id: 'duvidas', label: 'Dúvidas', icon: '💬', primary: false },
   ];
@@ -1332,6 +1517,7 @@ const IA = (function () {
             <input id="cf_pdf" type="file" accept="application/pdf" hidden>
             <button class="btn gold block sm" id="cf_absorver" disabled style="margin-top:8px">🤖 Ler folha com IA e auditar</button>
             <div class="mini" id="cf_ia_status" style="margin-top:6px"></div>
+            <div class="notice" style="margin-top:8px">💡 Quer <b>de graça</b>? O <a data-go="conversor" style="cursor:pointer;color:var(--navy);font-weight:700">Conversor PDF→JSON ›</a> lê a folha aqui no aparelho (sem IA, ideal para o Extrato Mensal).</div>
           </div>
           <div class="field"><label>Lançamentos variáveis do mês</label>
             <textarea id="cf_var" placeholder="Ex.: João - 10h extras 50%; Maria - 2 faltas; Pedro afastado desde 05/07 (INSS)..."></textarea>
@@ -1506,6 +1692,104 @@ const IA = (function () {
     });
   }
 
+  /* ============================================================
+     CONVERSOR PDF → JSON (grátis, no aparelho, via pdf.js)
+  ============================================================ */
+  let _convTexto = '';
+  async function viewConversor() {
+    const ok = typeof window.PDFConvert !== 'undefined' && typeof window.pdfjsLib !== 'undefined';
+    return `<div class="view">
+      <div class="view-title">Conversor de folha (PDF → JSON)</div>
+      <p class="view-sub">Grátis e sem IA: o PDF é lido aqui no aparelho, nada é enviado pra internet.</p>
+      <div class="card">
+        <div class="field"><label>Folha em PDF</label>
+          <div class="drop" id="cv_drop"><b>Toque para anexar</b> a folha (PDF com texto — não escaneado)</div>
+          <input id="cv_pdf" type="file" accept="application/pdf" hidden>
+          <div class="mini" id="cv_status" style="margin-top:8px"></div>
+        </div>
+        <div class="hint">Feito para o <b>Extrato Mensal</b> do sistema. Em PDF escaneado (imagem) o texto não sai — nesse caso use a leitura por IA na Conferência.</div>
+      </div>
+      <div id="cv_out"></div>
+      ${ok ? '' : '<div class="notice">O leitor de PDF (pdf.js) não carregou nesta versão. Abra o app pelo site (GitHub Pages) para usar o conversor grátis.</div>'}
+    </div>`;
+  }
+  function wireConversor() {
+    const drop = $('#cv_drop'); if (!drop) return;
+    const inp = $('#cv_pdf');
+    drop.addEventListener('click', () => inp.click());
+    inp.addEventListener('change', e => { const f = e.target.files[0]; if (f) converterPDF(f); });
+  }
+  async function converterPDF(file) {
+    const status = $('#cv_status'), drop = $('#cv_drop');
+    if (typeof window.PDFConvert === 'undefined') { toast('Leitor de PDF indisponível — abra pelo site', 'err'); return; }
+    drop.classList.add('has'); drop.innerHTML = '📎 ' + Util.escape(file.name);
+    $('#cv_out').innerHTML = '';
+    status.textContent = 'Lendo o PDF no aparelho...';
+    try {
+      const buf = await file.arrayBuffer();
+      const txt = await PDFConvert.extrairTexto(buf, (p, n) => { status.textContent = `Lendo página ${p}/${n}...`; });
+      const r = PDFConvert.parseFolha(txt);
+      _convTexto = r.texto;
+      status.textContent = '';
+      renderConversao(r);
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--err)">Erro ao ler o PDF: ' + Util.escape(e.message) + '</span>';
+    }
+  }
+  function renderConversao(r) {
+    const f = r.folha;
+    const json = JSON.stringify(f, null, 2);
+    const alertasHtml = r.alertas.length
+      ? `<div class="notice gold" style="margin-top:8px">⚠️ Confira:<br>${r.alertas.map(Util.escape).join('<br>')}</div>`
+      : '<div class="notice" style="margin-top:8px">✅ Sem pendências detectadas. Ainda assim, confira o JSON antes de auditar.</div>';
+    $('#cv_out').innerHTML = `
+      <div class="card">
+        <div class="section-hd">Resultado da conversão</div>
+        <div class="kv"><span>Empresa: <b>${Util.escape(f.empresaNome || '—')}</b></span><span>CNPJ: <b>${Util.formatCNPJ(f.empresaCnpj || '')}</b></span></div>
+        <div class="kv"><span>Competência: <b>${Util.escape(f.competencia || '—')}</b></span><span>Funcionários: <b>${f.funcionarios.length}</b></span></div>
+        <div class="kv"><span>Formato: <b>${Util.escape(r.formato)}</b></span></div>
+        ${alertasHtml}
+        <div class="fab-row" style="flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary" id="cv_baixar">⤓ Baixar JSON</button>
+          <button class="btn" id="cv_copiar">⧉ Copiar</button>
+          <button class="btn gold" id="cv_auditar">✅ Auditar esta folha</button>
+          <button class="btn ghost" id="cv_vertexto">📄 Ver texto extraído</button>
+        </div>
+        <div class="field" style="margin-top:10px"><label>JSON (edite se precisar antes de auditar)</label>
+          <textarea id="cv_json" spellcheck="false" style="min-height:260px;font-family:ui-monospace,monospace;font-size:12px">${Util.escape(json)}</textarea></div>
+        <div id="cv_texto" style="display:none"></div>
+      </div>`;
+    $('#cv_baixar').addEventListener('click', () => {
+      const nome = `folha-${(f.empresaNome || 'empresa').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)}-${(f.competencia || '').replace('/', '-')}.json`;
+      baixarArquivo(nome, $('#cv_json').value, 'application/json');
+      toast('JSON baixado ✓', 'ok');
+    });
+    $('#cv_copiar').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText($('#cv_json').value); toast('JSON copiado ✓', 'ok'); }
+      catch (e) { toast('Não consegui copiar — selecione o texto e copie manualmente', 'warn'); }
+    });
+    $('#cv_auditar').addEventListener('click', async () => {
+      let folha; try { folha = JSON.parse($('#cv_json').value); } catch (e) { return toast('JSON inválido: ' + e.message, 'err'); }
+      state.view = 'conferencia'; await render(); window.scrollTo(0, 0);
+      await importFolha(folha);
+    });
+    $('#cv_vertexto').addEventListener('click', () => {
+      const box = $('#cv_texto');
+      if (box.style.display === 'none') {
+        box.style.display = 'block';
+        box.innerHTML = `<div class="field" style="margin-top:10px"><label>Texto extraído do PDF (conferência)</label>
+          <textarea readonly spellcheck="false" style="min-height:200px;font-family:ui-monospace,monospace;font-size:11px">${Util.escape(_convTexto || '')}</textarea></div>`;
+      } else { box.style.display = 'none'; box.innerHTML = ''; }
+    });
+  }
+  function baixarArquivo(nome, conteudo, tipo) {
+    const blob = new Blob([conteudo], { type: tipo || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   /* ------------- helpers ------------- */
   function emptyState(em, t, p) {
     return `<div class="empty"><div class="em">${em}</div><h3 style="margin:10px 0 0">${t}</h3><p>${p}</p></div>`;
@@ -1520,13 +1804,15 @@ const IA = (function () {
   /* ------------- render dispatcher ------------- */
   const VIEWS = {
     painel: viewPainel, sindicatos: viewSindicatos, convencoes: viewConvencoes,
-    empresas: viewEmpresas, conferencia: viewConferencia, historico: viewHistorico, duvidas: viewDuvidas,
+    empresas: viewEmpresas, conferencia: viewConferencia, conversor: viewConversor,
+    historico: viewHistorico, duvidas: viewDuvidas,
   };
   async function render(arg) {
     renderNav();
     app.innerHTML = '<div class="view"><div class="empty"><div class="em">⏳</div></div></div>';
     app.innerHTML = await VIEWS[state.view](arg);
     if (state.view === 'conferencia') wireConferencia();
+    if (state.view === 'conversor') wireConversor();
     if (state.view === 'duvidas') wireDuvidas();
   }
 
