@@ -34,6 +34,7 @@
     <div style="margin-top:auto;padding:12px;border-top:1px solid var(--line)">
       <button class="btn ghost block sm" data-config style="margin-bottom:8px">⚙ Configurações</button>
       <button class="btn ghost block sm" data-export>⤴ Exportar backup (JSON)</button>
+      <div class="mini" id="appVersion" style="text-align:center;margin-top:10px;opacity:.65"></div>
     </div>
   </aside>
 
@@ -47,12 +48,12 @@
   <div class="toast" id="toast"></div>
 
   <script src="vendor/pdf.min.js"></script>
-  <script src="js/db.js?v=14"></script>
-  <script src="js/schema.js?v=14"></script>
-  <script src="js/audit.js?v=14"></script>
-  <script src="js/ia.js?v=14"></script>
-  <script src="js/convert.js?v=14"></script>
-  <script src="js/app.js?v=14"></script>
+  <script src="js/db.js?v=15"></script>
+  <script src="js/schema.js?v=15"></script>
+  <script src="js/audit.js?v=15"></script>
+  <script src="js/ia.js?v=15"></script>
+  <script src="js/convert.js?v=15"></script>
+  <script src="js/app.js?v=15"></script>
   <script>
     // Service worker só em http/https (no file:// não registra, e tudo bem)
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

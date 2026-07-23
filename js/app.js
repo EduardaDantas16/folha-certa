@@ -5,6 +5,8 @@
   const $ = (s, r = document) => r.querySelector(s);
   const app = $('#app');
 
+  const APP_VERSION = 'v15 · 23/07/2026';   // aparece no rodapé do menu ☰
+
   const NAV = [
     { id: 'painel', label: 'Painel', icon: '🏠', primary: true },
     { id: 'sindicatos', label: 'Sindicatos', icon: '🏛️', primary: false },
@@ -1300,6 +1302,7 @@
   }
 
   /* boot */
+  const _ver = $('#appVersion'); if (_ver) _ver.textContent = 'Folha Certa ' + APP_VERSION;
   render();
-  window.FC = { go, DB, toast, Util, Schema, Audit, IA, importConvencao, importFolha, exportBackup, createCltRegime, openMediadorModal }; // atalho p/ debug/console
+  window.FC = { go, DB, toast, Util, Schema, Audit, IA, importConvencao, importFolha, exportBackup, createCltRegime, openMediadorModal, versao: APP_VERSION }; // atalho p/ debug/console
 })();

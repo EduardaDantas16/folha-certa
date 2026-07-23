@@ -29,6 +29,7 @@ $body = @'
   <div style="margin-top:auto;padding:12px;border-top:1px solid var(--line)">
     <button class="btn ghost block sm" data-config style="margin-bottom:8px">&#9881; Configuracoes</button>
     <button class="btn ghost block sm" data-export>&#10548; Exportar backup (JSON)</button>
+    <div class="mini" id="appVersion" style="text-align:center;margin-top:10px;opacity:.65"></div>
   </div>
 </aside>
 <nav class="bottomnav" id="bottomnav"></nav>
