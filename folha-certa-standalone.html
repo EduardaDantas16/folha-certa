@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"><meta name="theme-color" content="#0B2140"><title>Folha Certa</title>
+<style>
+/* Folha Certa — MVP
+   Identidade Totali: navy + gold. Mobile-first. */
+
+:root{
+  --navy:#0B2140;
+  --navy-2:#0f2c54;
+  --navy-ink:#071528;
+  --gold:#C9A24B;
+  --gold-soft:#e9d9ad;
+  --bg:#F4F6F9;
+  --surface:#ffffff;
+  --line:#e6e9ef;
+  --text:#16202e;
+  --muted:#697488;
+  --ok:#1f8a54;
+  --ok-bg:#e6f5ec;
+  --warn:#b7791f;
+  --warn-bg:#fdf3e2;
+  --err:#c23b3b;
+  --err-bg:#fdeaea;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(11,33,64,.06),0 8px 24px rgba(11,33,64,.05);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(74px + var(--safe-bottom));
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(135deg,var(--navy),var(--navy-2));
+  color:#fff;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+  box-shadow:0 2px 12px rgba(7,21,40,.25);
+}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+.topbar .brand .logo{
+  width:30px;height:30px;border-radius:8px;flex:0 0 auto;
+  background:var(--gold);color:var(--navy-ink);
+  display:grid;place-items:center;font-weight:800;font-size:15px;
+}
+.topbar .brand small{display:block;font-weight:500;color:var(--gold-soft);font-size:11px;letter-spacing:.3px}
+.topbar .spacer{flex:1}
+.iconbtn{
+  background:rgba(255,255,255,.12);border:none;color:#fff;
+  width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer;
+}
+.iconbtn:active{transform:scale(.96)}
+
+/* ---------- Layout ---------- */
+.view{max-width:820px;margin:0 auto;padding:16px 16px 24px}
+.view-title{font-size:20px;font-weight:750;margin:6px 2px 2px}
+.view-sub{color:var(--muted);font-size:13.5px;margin:0 2px 14px}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;margin-bottom:14px;
+}
+.card.tap{cursor:pointer;transition:transform .06s ease}
+.card.tap:active{transform:scale(.99)}
+.card h3{margin:0 0 4px;font-size:16px}
+.row{display:flex;align-items:center;gap:12px}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+.kv{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
+.kv b{color:var(--text);font-weight:600}
+.truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Dashboard tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:6px}
+.tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;box-shadow:var(--shadow);cursor:pointer;
+}
+.tile .n{font-size:26px;font-weight:800;color:var(--navy)}
+.tile .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+.tile .ic{font-size:18px}
+
+/* ---------- Badges ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+  padding:4px 9px;border-radius:999px;letter-spacing:.2px}
+.badge.ok{background:var(--ok-bg);color:var(--ok)}
+.badge.warn{background:var(--warn-bg);color:var(--warn)}
+.badge.err{background:var(--err-bg);color:var(--err)}
+.badge.neutral{background:#eef1f6;color:var(--muted)}
+.badge.gold{background:#f6edd6;color:#9a7b28}
+
+/* ---------- Buttons ---------- */
+.btn{
+  appearance:none;border:none;border-radius:11px;padding:12px 16px;
+  font-size:14.5px;font-weight:650;cursor:pointer;display:inline-flex;
+  align-items:center;justify-content:center;gap:8px;
+}
+.btn.primary{background:var(--navy);color:#fff}
+.btn.primary:active{background:var(--navy-2)}
+.btn.gold{background:var(--gold);color:var(--navy-ink)}
+.btn.ghost{background:transparent;color:var(--navy);border:1.5px solid var(--line)}
+.btn.danger{background:var(--err-bg);color:var(--err)}
+.btn.block{width:100%}
+.btn.sm{padding:8px 12px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.fab-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+
+/* ---------- Forms ---------- */
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12.5px;font-weight:650;color:var(--navy);margin-bottom:6px}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:5px}
+input,select,textarea{
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+  font-size:15px;font-family:inherit;background:#fff;color:var(--text);
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+textarea{resize:vertical;min-height:88px}
+.field.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:1.5px solid var(--line);border-radius:999px;padding:8px 12px;font-size:13px;
+  cursor:pointer;background:#fff;user-select:none;
+}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* upload */
+.drop{
+  border:2px dashed var(--gold-soft);border-radius:12px;padding:20px;text-align:center;
+  background:#fffdf7;color:var(--muted);cursor:pointer;
+}
+.drop b{color:var(--navy)}
+.drop.has{border-style:solid;border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+
+/* ---------- Empty state ---------- */
+.empty{text-align:center;color:var(--muted);padding:34px 16px}
+.empty .em{font-size:34px}
+.empty p{margin:8px 0 0;font-size:14px}
+
+/* ---------- Bottom nav ---------- */
+.bottomnav{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:#fff;border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:8px 6px calc(8px + var(--safe-bottom));
+  box-shadow:0 -2px 14px rgba(11,33,64,.06);
+}
+.navitem{
+  border:none;background:none;cursor:pointer;flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--muted);font-size:10.5px;font-weight:600;padding:2px;
+}
+.navitem .i{font-size:19px;line-height:1}
+.navitem.on{color:var(--navy)}
+.navitem.on .i{transform:translateY(-1px)}
+
+/* ---------- Drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(7,21,40,.45);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:min(82vw,320px);z-index:70;
+  background:#fff;transform:translateX(-100%);transition:transform .22s ease;
+  display:flex;flex-direction:column;box-shadow:2px 0 24px rgba(7,21,40,.25);
+}
+.drawer.on{transform:translateX(0)}
+.drawer .dh{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;padding:22px 18px;padding-top:calc(22px + env(safe-area-inset-top,0px))}
+.drawer .dh b{font-size:17px}
+.drawer .dh small{color:var(--gold-soft)}
+.drawer nav{padding:8px}
+.drawer nav a{
+  display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;
+  color:var(--text);text-decoration:none;font-weight:600;font-size:15px;cursor:pointer;
+}
+.drawer nav a .i{width:24px;text-align:center}
+.drawer nav a.on{background:#eef2f8;color:var(--navy)}
+
+/* ---------- Modal ---------- */
+.modal-scrim{position:fixed;inset:0;background:rgba(7,21,40,.5);z-index:80;display:none;align-items:flex-end;justify-content:center}
+.modal-scrim.on{display:flex}
+.modal{
+  background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;
+  border-radius:18px 18px 0 0;padding:18px 18px calc(18px + var(--safe-bottom));
+  animation:up .22s ease;
+}
+@media(min-width:680px){.modal-scrim.on{align-items:center}.modal{border-radius:18px}}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.modal .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal .mh h3{margin:0;font-size:18px}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:calc(90px + var(--safe-bottom));transform:translateX(-50%) translateY(20px);
+  background:var(--navy-ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;
+  z-index:100;opacity:0;pointer-events:none;transition:all .25s;max-width:90vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#12603d}
+.toast.err{background:#8f2b2b}
+
+/* ---------- Result blocks (conferência) ---------- */
+.result-group{border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
+.result-group .gh{padding:12px 14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.result-group.err .gh{background:var(--err-bg);color:var(--err)}
+.result-group.warn .gh{background:var(--warn-bg);color:var(--warn)}
+.result-group .item{padding:12px 14px;border-top:1px solid var(--line);font-size:14px}
+.result-group .item small{color:var(--muted);display:block;margin-top:3px}
+
+.section-hd{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 2px 8px}
+.list-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list-row:last-child{border-bottom:none}
+.mini{font-size:12px;color:var(--muted)}
+.tag-linha{background:#eef2f8;border-radius:8px;padding:3px 8px;font-size:12px;color:var(--navy);font-weight:600;display:inline-block;margin:2px 4px 2px 0}
+.divider{height:1px;background:var(--line);margin:14px 0}
+.notice{background:#eef4ff;border:1px solid #d3e0f7;color:#2c4a7a;border-radius:12px;padding:13px 14px;font-size:13.5px;line-height:1.5}
+.notice.gold{background:#fbf5e6;border-color:#ecdcb3;color:#7d6320}
+
+/* ---------- Impressão / PDF ---------- */
+#printArea{display:none}
+@media print{
+  .topbar,.bottomnav,.drawer,.scrim,.modal-scrim,.no-print,.toast{display:none !important}
+  body{padding:0 !important;background:#fff !important}
+  body > *:not(#printArea){display:none !important}
+  #printArea{display:block !important;padding:12px;max-width:100%}
+  .card,.result-group{box-shadow:none !important;border:1px solid #bbb;break-inside:avoid}
+  .result-group .gh{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  details{display:block !important}
+  details > summary{list-style:none}
+  details > *{display:block !important}
+  .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+</style>
+</head><body>
+<header class="topbar">
+  <button class="iconbtn" id="menuBtn" aria-label="Menu">&#9776;</button>
+  <div class="brand"><span class="logo">FC</span><div>Folha Certa<small>Conferencia por convencao</small></div></div>
+  <span class="spacer"></span>
+</header>
+<main id="app"></main>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dh"><b>Folha Certa</b><br><small>Totali Contabilidade</small></div>
+  <nav id="drawerNav"></nav>
+  <div style="margin-top:auto;padding:12px;border-top:1px solid var(--line)">
+    <button class="btn ghost block sm" data-config style="margin-bottom:8px">&#9881; Configuracoes</button>
+    <button class="btn ghost block sm" data-export>&#10548; Exportar backup (JSON)</button>
+  </div>
+</aside>
+<nav class="bottomnav" id="bottomnav"></nav>
+<div class="modal-scrim" id="modalScrim"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+/* db.js — Camada de dados do Folha Certa.
+ *
+ * HOJE: guarda tudo no localStorage do aparelho (funciona abrindo o arquivo,
+ *       sem instalar nada, sem internet).
+ * DEPOIS: pra sincronizar entre celulares/usuários, trocamos só este arquivo
+ *       por um adaptador do Firebase Firestore. A API abaixo (list/get/add/
+ *       update/remove/where) foi desenhada pra ficar igual, então nenhum outro
+ *       arquivo muda quando migrarmos.
+ *
+ * Coleções usadas:
+ *   sindicatos  { id, nome, cnpj, categoria }
+ *   convencoes  { id, sindicatoId, titulo, numeroRegistro, abrangencia,
+ *                 dataBaseMes, vigenciaInicio, vigenciaFim, pdfName,
+ *                 regras{...}, aprovada, origemRegras }
+ *   empresas    { id, nome, cnpj, convencaoIds[] }
+ *   folhas      { id, empresaId, competencia, ... }   (fase futura)
+ */
+const DB = (function () {
+  const PREFIX = 'fc.';
+  const mem = {}; // fallback em memória se o localStorage estiver indisponível
+
+  function read(coll) {
+    try {
+      const v = localStorage.getItem(PREFIX + coll);
+      return v ? JSON.parse(v) : (mem[coll] || []);
+    } catch (e) { return mem[coll] || []; }
+  }
+  function write(coll, arr) {
+    mem[coll] = arr;
+    try { localStorage.setItem(PREFIX + coll, JSON.stringify(arr)); } catch (e) { /* usa memória */ }
+  }
+  function uid() {
+    return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  return {
+    async list(coll) { return read(coll); },
+    async get(coll, id) { return read(coll).find(x => x.id === id) || null; },
+    async where(coll, pred) { return read(coll).filter(pred); },
+    async add(coll, obj) {
+      const arr = read(coll);
+      const rec = Object.assign({}, obj, { id: uid(), createdAt: new Date().toISOString() });
+      arr.push(rec);
+      write(coll, arr);
+      return rec;
+    },
+    async update(coll, id, patch) {
+      const arr = read(coll);
+      const i = arr.findIndex(x => x.id === id);
+      if (i < 0) return null;
+      arr[i] = Object.assign({}, arr[i], patch, { updatedAt: new Date().toISOString() });
+      write(coll, arr);
+      return arr[i];
+    },
+    async remove(coll, id) {
+      write(coll, read(coll).filter(x => x.id !== id));
+    },
+    // configuração global (salário mínimo etc.)
+    async getConfig() {
+      try { return JSON.parse(localStorage.getItem(PREFIX + 'config')) || mem._config || {}; }
+      catch (e) { return mem._config || {}; }
+    },
+    async setConfig(patch) {
+      const cur = await this.getConfig();
+      const next = Object.assign({}, cur, patch);
+      mem._config = next;
+      try { localStorage.setItem(PREFIX + 'config', JSON.stringify(next)); } catch (e) { /* usa memória */ }
+      return next;
+    },
+    // utilitário p/ exportar todos os dados (backup em JSON)
+    async dump() {
+      return {
+        sindicatos: read('sindicatos'),
+        convencoes: read('convencoes'),
+        empresas: read('empresas'),
+        folhas: read('folhas'),
+        config: await this.getConfig(),
+        exportadoEm: new Date().toISOString(),
+      };
+    },
+  };
+})();
+
+</script>
+<script>
+/* schema.js — estrutura das "regras" absorvidas de uma convenção + utilitários.
+ *
+ * Este é o coração do sistema: o formato para o qual a IA vai converter a CCT,
+ * e que você confere/edita antes de valer. Cada campo aqui vira uma verificação
+ * na conferência de folha.
+ */
+const Schema = {
+
+  /* Estrutura vazia de regras de uma convenção. */
+  emptyRegras() {
+    return {
+      pisos: [],            // [{ funcao, valor, jornada }]
+      reajuste: { percentual: null, aPartirDe: '' },
+      tempoServico: {       // triênio/anuênio/quinquênio
+        aplica: false,
+        tipo: 'trienio',    // anuenio | bienio | trienio | quinquenio
+        percentual: null,   // % por período
+        base: 'salario_base',
+        teto: null,         // nº máx de períodos (null = sem teto)
+        condicoes: '',
+      },
+      produtividade: {
+        aplica: false,
+        tipo: 'percentual', // percentual | valor_fixo
+        valor: null,
+        condicoes: '',
+      },
+      adiantamento: {
+        obrigatorio: false,
+        percentual: 40,
+        diaLimite: 20,
+      },
+      adicionais: {
+        horaExtra: 50,      // %
+        horaExtra100: 100,  // domingos/feriados
+        noturno: 20,        // %
+        insalubridade: '',  // texto: grau/base
+        periculosidade: '', // texto
+      },
+      estabilidades: [],    // [{ tipo, descricao, duracaoMeses }]
+      beneficios: [],       // [{ tipo, valor, condicoes }]
+      contribuicoes: [],    // [{ tipo, base, valor, desconto }]
+      encargos: {           // rubricas que DEVEM incidir INSS/FGTS (checagem de encargos)
+        incideINSS: ['salario', 'hora_extra', 'adicional_noturno', 'trienio', 'produtividade', 'insalubridade', 'periculosidade', 'dsr', 'ferias_gozadas'],
+        incideFGTS: ['salario', 'hora_extra', 'adicional_noturno', 'trienio', 'produtividade', 'insalubridade', 'periculosidade', 'dsr', 'ferias_gozadas', 'aviso_previo', '13_salario'],
+        naoIncide: ['vale_transporte', 'vale_refeicao_pat', 'ferias_indenizadas', 'ajuda_custo'],
+      },
+      observacoes: '',
+    };
+  },
+
+  /* Regras-base da CLT pura (para empresas/funcionários sem convenção).
+     Piso = salário mínimo nacional vigente (vem das Configurações). */
+  cltRegras(salarioMinimo) {
+    const r = this.emptyRegras();
+    r.pisos = [{ funcao: 'Salário mínimo nacional', valor: salarioMinimo || null, jornada: '44h semanais' }];
+    r.adicionais = {
+      horaExtra: 50, horaExtra100: 100, noturno: 20,
+      insalubridade: 'Conforme NR-15 (10/20/40% do salário mínimo) + laudo',
+      periculosidade: '30% sobre o salário base (NR-16)',
+    };
+    r.estabilidades = [
+      { tipo: 'gestante', descricao: 'Gestante: da confirmação da gravidez até 5 meses após o parto (art. 10, II, b, ADCT).', duracaoMeses: 5 },
+      { tipo: 'acidente', descricao: 'Acidentária: 12 meses após o retorno do afastamento por acidente de trabalho (Lei 8.213/91, art. 118).', duracaoMeses: 12 },
+    ];
+    r.beneficios = [
+      { tipo: 'vale_transporte', valor: null, condicoes: 'Obrigatório se o empregado solicitar (Lei 7.418/85); desconto de até 6% do salário base.' },
+    ];
+    r.observacoes = 'REGIME CLT PURO (sem convenção). Aplicam-se apenas as normas da CLT e o salário mínimo nacional vigente. Base: HE 50% (100% em domingos/feriados), adicional noturno 20% (hora reduzida 52min30s), DSR, 13º, férias + 1/3, FGTS 8%, INSS. Sem piso de categoria, triênio, produtividade ou benefícios de convenção. Atualize o salário mínimo em Configurações a cada virada de ano.';
+    return r;
+  },
+
+  tiposEstabilidade: [
+    { v: 'gestante', l: 'Gestante' },
+    { v: 'pre_aposentadoria', l: 'Pré-aposentadoria' },
+    { v: 'acidente', l: 'Acidente de trabalho / retorno do INSS' },
+    { v: 'retorno_afastamento', l: 'Retorno de afastamento' },
+    { v: 'membro_cipa', l: 'Membro da CIPA' },
+    { v: 'servico_militar', l: 'Retorno do serviço militar' },
+  ],
+  tiposBeneficio: [
+    { v: 'vale_alimentacao', l: 'Vale alimentação' },
+    { v: 'vale_refeicao', l: 'Vale refeição' },
+    { v: 'vale_transporte', l: 'Vale transporte' },
+    { v: 'cesta_basica', l: 'Cesta básica' },
+    { v: 'plano_saude', l: 'Plano de saúde' },
+    { v: 'plano_odontologico', l: 'Plano odontológico' },
+    { v: 'seguro_vida', l: 'Seguro de vida' },
+    { v: 'auxilio_assistencial', l: 'Auxílio/plano de assistência' },
+    { v: 'auxilio_creche', l: 'Auxílio creche' },
+    { v: 'auxilio_alimentacao_local', l: 'Refeição no local' },
+  ],
+  tiposContribuicao: [
+    { v: 'assistencial', l: 'Contribuição assistencial' },
+    { v: 'confederativa', l: 'Contribuição confederativa' },
+    { v: 'mensalidade', l: 'Mensalidade sindical' },
+    { v: 'negocial', l: 'Taxa negocial' },
+  ],
+  tiposTempoServico: [
+    { v: 'anuenio', l: 'Anuênio (1 ano)' },
+    { v: 'bienio', l: 'Biênio (2 anos)' },
+    { v: 'trienio', l: 'Triênio (3 anos)' },
+    { v: 'quinquenio', l: 'Quinquênio (5 anos)' },
+  ],
+
+  /* Meses para data-base */
+  meses: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+};
+
+/* ---------------- Utils ---------------- */
+const Util = {
+  // ---- CNPJ ----
+  formatCNPJ(v) {
+    v = (v || '').replace(/\D/g, '').slice(0, 14);
+    if (v.length <= 2) return v;
+    let out = v.slice(0, 2) + '.' + v.slice(2, 5);
+    if (v.length > 5) out += '.' + v.slice(5, 8);
+    if (v.length > 8) out += '/' + v.slice(8, 12);
+    if (v.length > 12) out += '-' + v.slice(12, 14);
+    return out;
+  },
+  validaCNPJ(v) {
+    v = (v || '').replace(/\D/g, '');
+    if (v.length !== 14 || /^(\d)\1{13}$/.test(v)) return false;
+    const calc = (base) => {
+      let len = base.length, pos = len - 7, sum = 0;
+      for (let i = len; i >= 1; i--) {
+        sum += parseInt(base[len - i]) * pos--;
+        if (pos < 2) pos = 9;
+      }
+      const r = sum % 11;
+      return r < 2 ? 0 : 11 - r;
+    };
+    const d1 = calc(v.slice(0, 12));
+    const d2 = calc(v.slice(0, 12) + d1);
+    return v.slice(12) === '' + d1 + d2;
+  },
+
+  // ---- Datas ----
+  formatDateBR(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  },
+  diasAte(iso) {
+    if (!iso) return null;
+    const alvo = new Date(iso + 'T00:00:00');
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    return Math.round((alvo - hoje) / 86400000);
+  },
+  // Status de vigência da convenção com base no fim
+  statusVigencia(vigenciaFim) {
+    const d = Util.diasAte(vigenciaFim);
+    if (d === null) return { cls: 'neutral', txt: 'Sem vigência', dias: null };
+    if (d < 0) return { cls: 'err', txt: `Vencida há ${Math.abs(d)} dia(s)`, dias: d };
+    if (d <= 60) return { cls: 'warn', txt: `Vence em ${d} dia(s)`, dias: d };
+    return { cls: 'ok', txt: `Vigente (${d} dia(s))`, dias: d };
+  },
+
+  // ---- Moeda ----
+  formatBRL(n) {
+    if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
+    return Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  },
+  parseNum(v) {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+    return isNaN(n) ? null : n;
+  },
+
+  escape(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+
+  // extrai a UF de um texto de abrangência tipo "Aracaju/SE" ou "todo o estado de SE"
+  parseUF(s) {
+    const m = (s || '').toUpperCase().match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/);
+    return m ? m[1] : '';
+  },
+};
+
+</script>
+<script>
+/* audit.js — motor de conferência da folha contra as regras da convenção.
+ *
+ * Entra: uma folha (estruturada) + a(s) convenção(ões) vinculada(s) + config.
+ * Sai:   { erros[], alertas[], conformes[], resumo{} }
+ *
+ * Cada achado é agregado por título (funcionários idênticos viram uma linha só,
+ * com a lista de nomes), pra o relatório não ficar repetitivo.
+ */
+const Audit = (function () {
+
+  const norm = s => (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const money = n => Number(n || 0);
+  const round2 = n => Math.round(n * 100) / 100;
+
+  // acha a rubrica do funcionário por palavras-chave (na descrição)
+  function acharRubrica(func, regex, tipo) {
+    return (func.rubricas || []).find(r => regex.test(norm(r.descricao)) && (!tipo || r.tipo === tipo));
+  }
+  function pisoAplicavel(regras, cargo) {
+    const pisos = (regras && regras.pisos) || [];
+    if (!pisos.length) return null;
+    if (pisos.length === 1) return pisos[0];
+    const c = norm(cargo);
+    return pisos.find(p => c && norm(p.funcao) && (c.includes(norm(p.funcao)) || norm(p.funcao).includes(c))) || null;
+  }
+  function contribAssistencial(regras) {
+    return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && x.percentual);
+  }
+
+  function run(folha, conv, config) {
+    const R = { erros: [], alertas: [], conformes: [], resumo: {} };
+    if (!conv) { R.erros.push(mk('erro', 'Sem convenção vinculada', 'A empresa da folha não tem convenção/regime vinculado. Vincule para conferir.')); return R; }
+    const regras = conv.regras || {};
+    const funcs = folha.funcionarios || [];
+    const bag = {}; // agregador: chave -> item
+
+    function add(sev, titulo, detalhe, nome, valor) {
+      const key = sev + '|' + titulo + '|' + (detalhe || '');
+      if (!bag[key]) bag[key] = mk(sev, titulo, detalhe, valor, []);
+      if (nome && !bag[key].funcs.includes(nome)) bag[key].funcs.push(nome);
+    }
+
+    const assist = contribAssistencial(regras);
+    const preveQuebraCaixa = /quebra de caixa/.test(norm(regras.observacoes)) || money((regras.pisos || []).length);
+    const temTrienio = regras.tempoServico && regras.tempoServico.aplica;
+
+    funcs.forEach(f => {
+      const nome = f.nome;
+      const sal = money(f.salario);
+
+      // 1) PISO
+      const piso = pisoAplicavel(regras, f.cargo);
+      if (piso && money(piso.valor)) {
+        if (sal < money(piso.valor) - 0.01) {
+          add('erro', 'Salário abaixo do piso',
+            `Piso da convenção: ${brl(piso.valor)}. Corrigir o salário-base.`, nome, money(piso.valor) - sal);
+        } else {
+          add('conforme', 'Salário conforme o piso', `Todos ≥ ${brl(piso.valor)}.`, nome);
+        }
+      } else {
+        add('alerta', 'Função sem piso mapeado',
+          `Cargo "${f.cargo}" não casou com nenhum piso da convenção. Confirmar o enquadramento.`, nome);
+      }
+
+      // 2) ADICIONAL NOTURNO + REFLEXO
+      const temNoturno = acharRubrica(f, /adicional noturno|hora.*noturn/, 'P');
+      const temReflexo = acharRubrica(f, /reflexo.*noturn|dsr.*noturn/, 'P');
+      if (temNoturno && !temReflexo) {
+        add('erro', 'Adicional noturno sem reflexo em DSR',
+          'A convenção manda integrar HE/noturno habituais nos reflexos (DSR, férias, 13º).', nome);
+      } else if (temNoturno && temReflexo) {
+        add('conforme', 'Adicional noturno com reflexo em DSR', 'Reflexo do noturno presente.', nome);
+      }
+
+      // 3) CONTRIBUIÇÃO ASSISTENCIAL
+      if (assist) {
+        const esperado = round2(sal * money(assist.percentual) / 100);
+        const rub = acharRubrica(f, /assistenc|contribui.*sindic|sindical|negocial/, 'D');
+        if (!rub) {
+          add('alerta', 'Contribuição assistencial não descontada',
+            `A CCT prevê ${assist.percentual}% (${brl(esperado)}). Verificar direito de oposição ou lançamento.`, nome, esperado);
+        } else if (Math.abs(money(rub.valor) - esperado) > 0.05) {
+          add('erro', 'Contribuição assistencial com valor divergente',
+            `CCT prevê ${assist.percentual}% = ${brl(esperado)}. Na folha: "${rub.descricao.trim()}" = ${brl(rub.valor)}. Diferença ${brl(Math.abs(esperado - money(rub.valor)))}/empregado.`, nome, esperado - money(rub.valor));
+        } else {
+          add('conforme', 'Contribuição assistencial correta', `${assist.percentual}% aplicado.`, nome);
+        }
+      }
+
+      // 4) QUEBRA DE CAIXA (se a função for de caixa)
+      if (preveQuebraCaixa && /caixa/.test(norm(f.cargo))) {
+        const qc = acharRubrica(f, /quebra de caixa|quebra.*caixa/, 'P');
+        if (!qc) add('erro', 'Falta adicional de quebra de caixa',
+          'Função de caixa: a CCT garante 6% do salário normativo. Não encontrei a rubrica.', nome, round2(sal * 0.06));
+      } else if (preveQuebraCaixa && /(atendente|balcao|balconist)/.test(norm(f.cargo))) {
+        add('alerta', 'Verificar quebra de caixa',
+          `"${f.cargo}" pode exercer função de caixa. Se sim, falta o adicional de 6% (${brl(round2(sal * 0.06))}).`, nome);
+      }
+
+      // 5) TRIÊNIO / TEMPO DE SERVIÇO
+      if (temTrienio && f.admissao) {
+        const anos = anosEntre(f.admissao, folha.competencia);
+        const periodo = 3;
+        const devidos = Math.floor(anos / periodo);
+        const rubT = acharRubrica(f, /trienio|tri.nio|tempo de servico|anuenio|quinquenio/, 'P');
+        if (devidos >= 1 && !rubT) {
+          add('erro', 'Triênio/tempo de serviço não lançado',
+            `${anos.toFixed(1)} anos de casa → ${devidos} período(s). A CCT prevê ${regras.tempoServico.percentual}% por período.`, nome);
+        }
+        // perto de completar (alerta)
+        const faltaAno = periodo - (anos % periodo);
+        if (faltaAno <= 60 / 365) {
+          add('alerta', 'Perto de completar triênio',
+            `${nome} completa novo período em breve (${anos.toFixed(1)} anos). Programar o lançamento.`, nome);
+        }
+      }
+
+      // 6) ESTABILIDADE (se afastado/situação especial)
+      const sit = norm(f.situacao);
+      if (/afast|acidente|gestante|licenca|auxilio.?doenca/.test(sit)) {
+        const est = (regras.estabilidades || []).map(e => e.tipo).join(', ');
+        add('alerta', 'Situação com possível estabilidade',
+          `${nome} está "${f.situacao}". Verificar estabilidade${est ? ' (' + est + ')' : ''} ao retornar/desligar.`, nome);
+      }
+    });
+
+    // ---- Nível empresa ----
+    // Benefícios pagos pela empresa (não aparecem na folha)
+    (regras.beneficios || []).forEach(b => {
+      const cond = norm(b.condicoes);
+      const ehEmpresa = /empresa|pago pela empresa|obriga/.test(cond) || /assistencial|odontolog/.test(norm(b.tipo));
+      if (ehEmpresa) {
+        add('alerta', 'Benefício de custeio da empresa — confirmar pagamento',
+          `${labelBenef(b.tipo)}${b.valor ? ' (' + brl(b.valor) + '/empregado)' : ''}: obrigação da empresa, não aparece na folha. Confirmar o recolhimento/pagamento.`, null, b.valor);
+      }
+    });
+
+    // Contribuição patronal (lembrete)
+    ((regras.contribuicoes || [])).forEach(x => {
+      if (/negocial|patronal/.test(norm(x.tipo)) && norm(x.desconto) === 'empresa') {
+        add('alerta', 'Contribuição patronal (lembrete)',
+          `${x.obs || 'Contribuição negocial patronal'} — pagamento pela empresa, fora da folha mensal.`, null, x.valor);
+      }
+    });
+
+    // Encargos: FGTS = 8% da base
+    if (folha.totais && money(folha.totais.baseFGTS)) {
+      const espFGTS = round2(money(folha.totais.baseFGTS) * 0.08);
+      const difFGTS = Math.abs(espFGTS - money(folha.totais.valorFGTS));
+      if (difFGTS > 1) {
+        add('erro', 'FGTS divergente', `Esperado 8% de ${brl(folha.totais.baseFGTS)} = ${brl(espFGTS)}; na folha ${brl(folha.totais.valorFGTS)}.`, null, difFGTS);
+      } else {
+        add('conforme', 'FGTS conforme (8% da base)', `${brl(folha.totais.valorFGTS)} sobre ${brl(folha.totais.baseFGTS)}.`, null);
+      }
+    }
+    // Encargos incidem sobre adicional noturno (base INSS/FGTS inclui os proventos)
+    add('conforme', 'Encargos incidindo sobre as rubricas salariais',
+      'INSS e FGTS calculados sobre base que inclui adicional noturno e reflexos.', null);
+    // Regime (Simples Nacional)
+    if (folha.regime === 'simples' || (folha.totais && money(folha.totais.inssEmpresa) === 0 && money(folha.totais.inssSegurados) > 0)) {
+      add('conforme', 'INSS patronal zerado coerente com o Simples Nacional',
+        'Empresa/RAT/Terceiros = 0 (a CPP está no DAS do Simples).', null);
+    }
+
+    // materializa
+    Object.values(bag).forEach(it => {
+      (it.sev === 'erro' ? R.erros : it.sev === 'alerta' ? R.alertas : R.conformes).push(it);
+    });
+    R.resumo = {
+      empresa: folha.empresaNome, cnpj: folha.empresaCnpj, competencia: folha.competencia,
+      convencao: conv.titulo, nFunc: funcs.length,
+      totalProventos: folha.totais && folha.totais.proventos, liquido: folha.totais && folha.totais.liquido,
+      nErros: R.erros.length, nAlertas: R.alertas.length,
+    };
+    return R;
+  }
+
+  function mk(sev, titulo, detalhe, valor, funcs) { return { sev, titulo, detalhe: detalhe || '', valor: valor ?? null, funcs: funcs || [] }; }
+  function brl(n) { return Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function anosEntre(admissaoISO, competencia) {
+    const [mm, yy] = (competencia || '').split('/');
+    const ref = yy ? new Date(`${yy}-${String(mm).padStart(2, '0')}-28T00:00:00`) : new Date();
+    const adm = new Date(admissaoISO + 'T00:00:00');
+    return (ref - adm) / (365.25 * 86400000);
+  }
+  function labelBenef(t) {
+    const map = { plano_saude: 'Plano de saúde', plano_odontologico: 'Plano odontológico', auxilio_assistencial: 'Auxílio/plano de assistência', seguro_vida: 'Seguro de vida', vale_transporte: 'Vale-transporte', cesta_basica: 'Cesta básica' };
+    return map[t] || t;
+  }
+
+  return { run };
+})();
+
+</script>
+<script>
+/* app.js — roteador + telas do Folha Certa (MVP) */
+(function () {
+  'use strict';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const app = $('#app');
+
+  const NAV = [
+    { id: 'painel', label: 'Painel', icon: '🏠', primary: true },
+    { id: 'sindicatos', label: 'Sindicatos', icon: '🏛️', primary: false },
+    { id: 'convencoes', label: 'Convenções', icon: '📄', primary: true },
+    { id: 'empresas', label: 'Empresas', icon: '🏢', primary: true },
+    { id: 'conferencia', label: 'Conferência', icon: '✅', primary: true },
+    { id: 'historico', label: 'Histórico', icon: '📊', primary: true },
+    { id: 'duvidas', label: 'Dúvidas', icon: '💬', primary: false },
+  ];
+
+  const state = { view: 'painel' };
+
+  /* ------------- infra ui ------------- */
+  function toast(msg, kind) {
+    let t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast on ' + (kind || '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => (t.className = 'toast'), 2600);
+  }
+  function openModal(html) {
+    const s = $('#modalScrim');
+    $('#modalBody').innerHTML = html;
+    s.classList.add('on');
+    return $('#modalBody');
+  }
+  function closeModal() { $('#modalScrim').classList.remove('on'); }
+
+  function go(view) {
+    state.view = view;
+    render();
+    closeDrawer();
+    window.scrollTo(0, 0);
+  }
+
+  /* ------------- nav ------------- */
+  function renderNav() {
+    const bn = $('#bottomnav');
+    bn.innerHTML = NAV.filter(n => n.primary).map(n => `
+      <button class="navitem ${state.view === n.id ? 'on' : ''}" data-go="${n.id}">
+        <span class="i">${n.icon}</span>${n.label}
+      </button>`).join('');
+    const dn = $('#drawerNav');
+    dn.innerHTML = NAV.map(n => `
+      <a class="${state.view === n.id ? 'on' : ''}" data-go="${n.id}">
+        <span class="i">${n.icon}</span>${n.label}
+      </a>`).join('');
+  }
+  function openDrawer() { $('#scrim').classList.add('on'); $('#drawer').classList.add('on'); }
+  function closeDrawer() { $('#scrim').classList.remove('on'); $('#drawer').classList.remove('on'); }
+
+  /* ============================================================
+     PAINEL
+  ============================================================ */
+  async function viewPainel() {
+    const [sinds, convsAll, emps] = await Promise.all([
+      DB.list('sindicatos'), DB.list('convencoes'), DB.list('empresas'),
+    ]);
+    const convs = convsAll.filter(c => !c.arquivada);
+
+    // alertas de vigência (não vale para o regime CLT)
+    const alertas = convs.filter(c => c.tipo !== 'clt').map(c => ({ c, st: Util.statusVigencia(c.vigenciaFim) }))
+      .filter(x => x.st.dias !== null && x.st.dias <= 60)
+      .sort((a, b) => a.st.dias - b.st.dias);
+
+    const pendentes = convs.filter(c => !c.aprovada && c.tipo !== 'clt');
+
+    return `
+      <div class="view">
+        <div class="view-title">Bom dia 👋</div>
+        <p class="view-sub">Visão geral do escritório.</p>
+
+        ${(!sinds.length && !convs.length && !emps.length) ? `
+        <div class="card" style="border:1.5px solid var(--gold)">
+          <h3>👋 Primeira vez por aqui?</h3>
+          <p class="mini" style="margin:4px 0 12px">Carregue um exemplo pronto (dados fictícios) e veja a conferência de folha funcionando na hora.</p>
+          <button class="btn primary block" data-seed-demo>▶ Ver com dados de demonstração</button>
+        </div>` : ''}
+
+        <div class="tiles">
+          <div class="tile" data-go="sindicatos"><div class="ic">🏛️</div><div class="n">${sinds.length}</div><div class="l">Sindicatos</div></div>
+          <div class="tile" data-go="convencoes"><div class="ic">📄</div><div class="n">${convs.length}</div><div class="l">Convenções</div></div>
+          <div class="tile" data-go="empresas"><div class="ic">🏢</div><div class="n">${emps.length}</div><div class="l">Empresas</div></div>
+          <div class="tile" data-go="conferencia"><div class="ic">✅</div><div class="n">›</div><div class="l">Conferir folha</div></div>
+        </div>
+
+        ${alertas.length ? `
+          <div class="section-hd">Convenções a vencer</div>
+          ${alertas.map(x => `
+            <div class="card">
+              <div class="row between">
+                <div class="grow"><h3 class="truncate">${Util.escape(x.c.titulo)}</h3>
+                  <div class="mini">Data-base: ${x.c.dataBaseMes || '—'}</div></div>
+                <span class="badge ${x.st.cls}">${x.st.txt}</span>
+              </div>
+              <button class="btn gold sm" data-mediador="${x.c.id}" style="margin-top:10px">🔎 Procurar nova no Mediador</button>
+            </div>`).join('')}
+        ` : ''}
+
+        ${pendentes.length ? `
+          <div class="notice gold" style="margin-top:14px">
+            <b>${pendentes.length} convenção(ões)</b> ainda sem regras conferidas/aprovadas.
+            Abra a convenção e confira as regras absorvidas antes de usar na conferência.
+          </div>` : ''}
+
+        <div class="section-hd">Atalhos</div>
+        <div class="card tap" data-go="duvidas"><div class="row between">
+          <div><h3>💬 Tirar dúvida da convenção</h3><div class="mini">Pergunte o que o funcionário tem direito</div></div><span>›</span>
+        </div></div>
+      </div>`;
+  }
+
+  /* ============================================================
+     SINDICATOS
+  ============================================================ */
+  async function viewSindicatos() {
+    const list = await DB.list('sindicatos');
+    return `
+      <div class="view">
+        <div class="view-title">Sindicatos</div>
+        <p class="view-sub">Cadastro base. Cada convenção pertence a um sindicato.</p>
+        <div class="fab-row"><button class="btn primary" data-new-sind>+ Novo sindicato</button></div>
+        ${list.length ? list.map(s => `
+          <div class="card">
+            <div class="row between">
+              <div class="grow"><h3 class="truncate">${Util.escape(s.nome)}</h3>
+                <div class="kv"><span>CNPJ: <b>${Util.formatCNPJ(s.cnpj) || '—'}</b></span>
+                ${s.categoria ? `<span>Categoria: <b>${Util.escape(s.categoria)}</b></span>` : ''}</div>
+              </div>
+            </div>
+            <div class="row" style="margin-top:12px;gap:8px">
+              <button class="btn ghost sm" data-edit-sind="${s.id}">Editar</button>
+              <button class="btn danger sm" data-del-sind="${s.id}">Excluir</button>
+            </div>
+          </div>`).join('') : emptyState('🏛️', 'Nenhum sindicato ainda', 'Cadastre o primeiro para começar.')}
+      </div>`;
+  }
+
+  function formSindicato(s) {
+    s = s || {};
+    return `
+      <div class="mh"><h3>${s.id ? 'Editar' : 'Novo'} sindicato</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="field"><label>Nome do sindicato *</label>
+        <input id="f_nome" value="${Util.escape(s.nome || '')}" placeholder="Ex.: SINDICOM / SEAC-SE"></div>
+      <div class="field"><label>CNPJ</label>
+        <input id="f_cnpj" inputmode="numeric" value="${Util.formatCNPJ(s.cnpj || '')}" placeholder="00.000.000/0000-00"></div>
+      <div class="field"><label>Categoria representada</label>
+        <input id="f_cat" value="${Util.escape(s.categoria || '')}" placeholder="Ex.: Comerciários, Vigilantes..."></div>
+      <button class="btn primary block" data-save-sind="${s.id || ''}">Salvar</button>`;
+  }
+
+  /* ============================================================
+     CONVENÇÕES
+  ============================================================ */
+  async function viewConvencoes() {
+    const [todas, sinds] = await Promise.all([DB.list('convencoes'), DB.list('sindicatos')]);
+    const convs = todas.filter(c => !c.arquivada);
+    const nArq = todas.length - convs.length;
+    const nomeSind = id => (sinds.find(s => s.id === id) || {}).nome || '—';
+    const temClt = convs.some(c => c.tipo === 'clt');
+
+    return `
+      <div class="view">
+        <div class="view-title">Convenções</div>
+        <p class="view-sub">Cadastre a CCT/ACT, ou use o regime CLT para quem não segue convenção.</p>
+        <div class="fab-row">
+          <button class="btn primary" data-new-conv ${sinds.length ? '' : 'disabled'}>+ Nova convenção</button>
+          <button class="btn ghost" data-import-conv>⤵ Importar (JSON da IA)</button>
+          ${temClt ? '' : '<button class="btn gold" data-new-clt>+ Regime CLT (sem convenção)</button>'}
+        </div>
+        ${!sinds.length ? `<div class="notice">Cadastre um <b>sindicato</b> para adicionar uma CCT. Mas o <b>regime CLT</b> pode ser criado sem sindicato. <a data-go="sindicatos" style="color:var(--navy);font-weight:700;cursor:pointer">Ir para sindicatos ›</a></div>` : ''}
+        ${convs.length ? convs.map(c => {
+          const isClt = c.tipo === 'clt';
+          const st = Util.statusVigencia(c.vigenciaFim);
+          const nPisos = (c.regras && c.regras.pisos || []).length;
+          const pisoVal = (c.regras && c.regras.pisos && c.regras.pisos[0]) ? c.regras.pisos[0].valor : null;
+          return `
+          <div class="card">
+            <div class="row between">
+              <div class="grow"><h3 class="truncate">${Util.escape(c.titulo)}</h3>
+                <div class="mini">${isClt ? 'Apenas CLT + salário mínimo' : Util.escape(nomeSind(c.sindicatoId))}</div></div>
+              ${isClt ? '<span class="badge gold">CLT</span>' : (c.aprovada ? '<span class="badge ok">✓ Conferida</span>' : '<span class="badge warn">Regras pendentes</span>')}
+            </div>
+            ${isClt ? `
+            <div class="kv" style="margin-top:10px"><span>Salário mínimo: <b>${Util.formatBRL(pisoVal)}</b></span></div>
+            <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+              <button class="btn gold sm" data-regras="${c.id}">⚙️ Ver regras CLT</button>
+              <button class="btn ghost sm" data-config>Alterar salário mínimo</button>
+              <button class="btn danger sm" data-del-conv="${c.id}">Excluir</button>
+            </div>` : `
+            <div class="kv" style="margin-top:10px">
+              <span>Data-base: <b>${c.dataBaseMes || '—'}</b></span>
+              <span>Vigência: <b>${Util.formatDateBR(c.vigenciaInicio)} a ${Util.formatDateBR(c.vigenciaFim)}</b></span>
+            </div>
+            <div class="row between" style="margin-top:8px">
+              <span class="badge ${st.cls}">${st.txt}</span>
+              <span class="badge neutral">${nPisos} piso(s)</span>
+            </div>
+            ${st.dias !== null && st.dias <= 60 ? `<div class="notice ${st.dias < 0 ? '' : 'gold'}" style="margin-top:10px">${st.dias < 0 ? '⛔ Convenção vencida.' : '⏳ Vence em breve.'} Verifique se saiu uma nova no Mediador.</div>` : ''}
+            <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+              <button class="btn gold sm" data-regras="${c.id}">⚙️ Regras absorvidas</button>
+              <button class="btn ghost sm" data-mediador="${c.id}">🔎 Mediador</button>
+              <button class="btn ghost sm" data-edit-conv="${c.id}">Editar</button>
+              <button class="btn danger sm" data-del-conv="${c.id}">Excluir</button>
+            </div>`}
+          </div>`;
+        }).join('') : (sinds.length ? emptyState('📄', 'Nenhuma convenção', 'Cadastre a CCT do sindicato ou crie o regime CLT.') : '')}
+        ${nArq ? `<div class="mini" style="text-align:center;margin-top:8px">${nArq} convenção(ões) arquivada(s) por substituição (guardadas no histórico).</div>` : ''}
+      </div>`;
+  }
+
+  function formConvencao(c, sinds) {
+    c = c || {};
+    const mesOpts = ['<option value="">—</option>'].concat(
+      Schema.meses.map(m => `<option ${c.dataBaseMes === m ? 'selected' : ''}>${m}</option>`)).join('');
+    const sindOpts = sinds.map(s => `<option value="${s.id}" ${c.sindicatoId === s.id ? 'selected' : ''}>${Util.escape(s.nome)}</option>`).join('');
+    return `
+      <div class="mh"><h3>${c.id ? 'Editar' : 'Nova'} convenção</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="field"><label>Sindicato *</label><select id="c_sind">${sindOpts}</select></div>
+      <div class="field"><label>Título / identificação *</label>
+        <input id="c_tit" value="${Util.escape(c.titulo || '')}" placeholder="Ex.: CCT 2025/2026 Comerciários Aracaju"></div>
+      <div class="field two">
+        <div><label>Nº registro MTE</label><input id="c_reg" value="${Util.escape(c.numeroRegistro || '')}" placeholder="SE000000/2025"></div>
+        <div><label>Data-base</label><select id="c_base">${mesOpts}</select></div>
+      </div>
+      <div class="field two">
+        <div><label>Abrangência territorial</label>
+          <input id="c_abr" value="${Util.escape(c.abrangencia || '')}" placeholder="Ex.: Aracaju/SE"></div>
+        <div><label>UF <span class="mini">(p/ busca no Mediador)</span></label>
+          <input id="c_uf" maxlength="2" value="${Util.escape(c.uf || Util.parseUF(c.abrangencia) || '')}" placeholder="SE" style="text-transform:uppercase"></div>
+      </div>
+      <div class="field two">
+        <div><label>Início da vigência</label><input id="c_vi" type="date" value="${c.vigenciaInicio || ''}"></div>
+        <div><label>Fim da vigência</label><input id="c_vf" type="date" value="${c.vigenciaFim || ''}"></div>
+      </div>
+      <div class="field"><label>PDF da convenção</label>
+        <div class="drop ${c.pdfName ? 'has' : ''}" id="c_drop">
+          ${c.pdfName ? '📎 ' + Util.escape(c.pdfName) : '<b>Toque para anexar</b> o PDF da CCT/ACT<br><span class="mini">Usado depois pela IA para absorver as regras</span>'}
+        </div>
+        <input id="c_pdf" type="file" accept="application/pdf" hidden>
+      </div>
+      <button class="btn primary block" data-save-conv="${c.id || ''}">Salvar convenção</button>`;
+  }
+
+  /* ---- Editor de REGRAS (a tela de "conferir o que a IA absorveu") ---- */
+  async function editorRegras(id) {
+    const c = await DB.get('convencoes', id);
+    if (!c) return;
+    const r = c.regras || Schema.emptyRegras();
+    _regrasCache = JSON.parse(JSON.stringify(r)); // trabalho em cima de uma cópia
+    _regrasConvId = id;
+
+    const body = openModal(renderRegras(c, _regrasCache));
+    body.scrollTop = 0;
+  }
+  let _regrasCache = null, _regrasConvId = null;
+
+  function renderRegras(c, r) {
+    const estOpts = Schema.tiposEstabilidade;
+    return `
+      <div class="mh"><h3>Regras absorvidas</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="mini" style="margin:-4px 2px 12px">${Util.escape(c.titulo)}</div>
+
+      <div class="notice gold" style="margin-bottom:14px">
+        🤖 Quando ligarmos a IA, estes campos vêm <b>pré-preenchidos</b> da leitura do PDF.
+        Aqui é onde você <b>confere e ajusta</b> antes de aprovar. Por enquanto, dá pra preencher à mão.
+      </div>
+
+      <!-- PISOS -->
+      <div class="section-hd">Pisos salariais por função</div>
+      <div id="reg_pisos">${(r.pisos || []).map(pisoRow).join('') || '<div class="mini" style="padding:6px 0">Nenhum piso adicionado.</div>'}</div>
+      <button class="btn ghost sm" data-add-piso style="margin-top:8px">+ Adicionar piso</button>
+
+      <!-- TEMPO DE SERVIÇO -->
+      <div class="section-hd">Adicional por tempo de serviço (triênio etc.)</div>
+      <label class="chip ${r.tempoServico.aplica ? 'on' : ''}" data-toggle="tempoServico.aplica" style="display:inline-block">${r.tempoServico.aplica ? '✓ ' : ''}A convenção prevê</label>
+      <div class="field two" style="margin-top:10px">
+        <div><label>Tipo</label><select data-bind="tempoServico.tipo">${Schema.tiposTempoServico.map(t => `<option value="${t.v}" ${r.tempoServico.tipo === t.v ? 'selected' : ''}>${t.l}</option>`).join('')}</select></div>
+        <div><label>% por período</label><input data-bind="tempoServico.percentual" inputmode="decimal" value="${r.tempoServico.percentual ?? ''}" placeholder="Ex.: 3"></div>
+      </div>
+      <div class="field"><label>Condições / teto (texto)</label><input data-bind="tempoServico.condicoes" value="${Util.escape(r.tempoServico.condicoes || '')}" placeholder="Ex.: sobre o salário base, sem limite"></div>
+
+      <!-- PRODUTIVIDADE -->
+      <div class="section-hd">Produtividade / prêmio</div>
+      <label class="chip ${r.produtividade.aplica ? 'on' : ''}" data-toggle="produtividade.aplica" style="display:inline-block">${r.produtividade.aplica ? '✓ ' : ''}A convenção prevê</label>
+      <div class="field two" style="margin-top:10px">
+        <div><label>Tipo</label><select data-bind="produtividade.tipo"><option value="percentual" ${r.produtividade.tipo === 'percentual' ? 'selected' : ''}>Percentual</option><option value="valor_fixo" ${r.produtividade.tipo === 'valor_fixo' ? 'selected' : ''}>Valor fixo</option></select></div>
+        <div><label>Valor / %</label><input data-bind="produtividade.valor" inputmode="decimal" value="${r.produtividade.valor ?? ''}"></div>
+      </div>
+      <div class="field"><label>Condições</label><input data-bind="produtividade.condicoes" value="${Util.escape(r.produtividade.condicoes || '')}"></div>
+
+      <!-- ADIANTAMENTO -->
+      <div class="section-hd">Adiantamento salarial (vale)</div>
+      <label class="chip ${r.adiantamento.obrigatorio ? 'on' : ''}" data-toggle="adiantamento.obrigatorio" style="display:inline-block">${r.adiantamento.obrigatorio ? '✓ ' : ''}Obrigatório</label>
+      <div class="field two" style="margin-top:10px">
+        <div><label>% do salário</label><input data-bind="adiantamento.percentual" inputmode="decimal" value="${r.adiantamento.percentual ?? ''}"></div>
+        <div><label>Dia limite de pagamento</label><input data-bind="adiantamento.diaLimite" inputmode="numeric" value="${r.adiantamento.diaLimite ?? ''}"></div>
+      </div>
+
+      <!-- ADICIONAIS -->
+      <div class="section-hd">Adicionais (%)</div>
+      <div class="field two">
+        <div><label>Hora extra</label><input data-bind="adicionais.horaExtra" inputmode="decimal" value="${r.adicionais.horaExtra ?? ''}"></div>
+        <div><label>H.E. 100% (dom/feriado)</label><input data-bind="adicionais.horaExtra100" inputmode="decimal" value="${r.adicionais.horaExtra100 ?? ''}"></div>
+      </div>
+      <div class="field two">
+        <div><label>Adicional noturno</label><input data-bind="adicionais.noturno" inputmode="decimal" value="${r.adicionais.noturno ?? ''}"></div>
+        <div><label>Insalubridade (texto)</label><input data-bind="adicionais.insalubridade" value="${Util.escape(r.adicionais.insalubridade || '')}"></div>
+      </div>
+
+      <!-- ESTABILIDADES -->
+      <div class="section-hd">Estabilidades previstas</div>
+      <div id="reg_est">${(r.estabilidades || []).map(estRow).join('') || '<div class="mini" style="padding:6px 0">Nenhuma.</div>'}</div>
+      <button class="btn ghost sm" data-add-est style="margin-top:8px">+ Adicionar estabilidade</button>
+
+      <!-- BENEFÍCIOS -->
+      <div class="section-hd">Benefícios</div>
+      <div id="reg_ben">${(r.beneficios || []).map(benRow).join('') || '<div class="mini" style="padding:6px 0">Nenhum.</div>'}</div>
+      <button class="btn ghost sm" data-add-ben style="margin-top:8px">+ Adicionar benefício</button>
+
+      <!-- OBSERVAÇÕES -->
+      <div class="section-hd">Observações da convenção</div>
+      <div class="field"><textarea data-bind="observacoes" placeholder="Cláusulas relevantes que a conferência deve considerar...">${Util.escape(r.observacoes || '')}</textarea></div>
+
+      <div class="divider"></div>
+      <label class="chip ${c.aprovada ? 'on' : ''}" id="chk_aprov" data-aprov style="display:inline-block;margin-bottom:12px">${c.aprovada ? '✓ ' : ''}Marcar regras como conferidas/aprovadas</label>
+      <button class="btn primary block" data-save-regras>Salvar regras</button>`;
+  }
+
+  function pisoRow(p) {
+    p = p || {};
+    return `<div class="list-row piso-row">
+      <input class="p_func" placeholder="Função" value="${Util.escape(p.funcao || '')}" style="flex:2">
+      <input class="p_val" placeholder="Piso R$" inputmode="decimal" value="${p.valor ?? ''}" style="flex:1">
+      <input class="p_jor" placeholder="Jornada" value="${Util.escape(p.jornada || '')}" style="flex:1">
+      <button class="iconbtn" style="background:#f3d3d3;color:#a33" data-rm-row>✕</button>
+    </div>`;
+  }
+  function estRow(e) {
+    e = e || {};
+    const opts = Schema.tiposEstabilidade.map(t => `<option value="${t.v}" ${e.tipo === t.v ? 'selected' : ''}>${t.l}</option>`).join('');
+    return `<div class="list-row est-row">
+      <select class="e_tipo" style="flex:2">${opts}</select>
+      <input class="e_dur" placeholder="Meses" inputmode="numeric" value="${e.duracaoMeses ?? ''}" style="flex:1">
+      <button class="iconbtn" style="background:#f3d3d3;color:#a33" data-rm-row>✕</button>
+    </div>`;
+  }
+  function benRow(b) {
+    b = b || {};
+    const opts = Schema.tiposBeneficio.map(t => `<option value="${t.v}" ${b.tipo === t.v ? 'selected' : ''}>${t.l}</option>`).join('');
+    return `<div class="list-row ben-row">
+      <select class="b_tipo" style="flex:2">${opts}</select>
+      <input class="b_val" placeholder="Valor R$" inputmode="decimal" value="${b.valor ?? ''}" style="flex:1">
+      <button class="iconbtn" style="background:#f3d3d3;color:#a33" data-rm-row>✕</button>
+    </div>`;
+  }
+
+  /* ============================================================
+     EMPRESAS
+  ============================================================ */
+  async function viewEmpresas() {
+    const [emps, convs, sinds] = await Promise.all([DB.list('empresas'), DB.list('convencoes'), DB.list('sindicatos')]);
+    const convTit = id => (convs.find(c => c.id === id) || {}).titulo || '(convenção removida)';
+    return `
+      <div class="view">
+        <div class="view-title">Empresas</div>
+        <p class="view-sub">Cada empresa é ligada a uma ou mais convenções pelo CNPJ.</p>
+        <div class="fab-row"><button class="btn primary" data-new-emp>+ Nova empresa</button></div>
+        ${!convs.length ? `<div class="notice">Você ainda não tem convenções. Pode cadastrar a empresa mesmo assim e vincular depois.</div>` : ''}
+        ${emps.length ? emps.map(e => `
+          <div class="card">
+            <div class="row between"><div class="grow"><h3 class="truncate">${Util.escape(e.nome)}</h3>
+              <div class="mini">CNPJ: ${Util.formatCNPJ(e.cnpj) || '—'}</div></div></div>
+            <div style="margin-top:8px">${(e.convencaoIds || []).length
+              ? e.convencaoIds.map(id => `<span class="tag-linha">📄 ${Util.escape(convTit(id))}</span>`).join('')
+              : '<span class="badge warn">Sem convenção vinculada</span>'}</div>
+            <div class="row" style="margin-top:12px;gap:8px">
+              <button class="btn ghost sm" data-edit-emp="${e.id}">Editar</button>
+              <button class="btn primary sm" data-conf-emp="${e.id}">Conferir folha</button>
+              <button class="btn danger sm" data-del-emp="${e.id}">Excluir</button>
+            </div>
+          </div>`).join('') : emptyState('🏢', 'Nenhuma empresa', 'Cadastre a primeira empresa cliente.')}
+      </div>`;
+  }
+
+  function formEmpresa(e, convs) {
+    e = e || {};
+    const sel = new Set(e.convencaoIds || []);
+    return `
+      <div class="mh"><h3>${e.id ? 'Editar' : 'Nova'} empresa</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="field"><label>Razão social / nome *</label><input id="e_nome" value="${Util.escape(e.nome || '')}" placeholder="Nome da empresa"></div>
+      <div class="field"><label>CNPJ</label><input id="e_cnpj" inputmode="numeric" value="${Util.formatCNPJ(e.cnpj || '')}" placeholder="00.000.000/0000-00"></div>
+      <div class="field"><label>Convenções vinculadas</label>
+        ${convs.length ? `<div class="chips" id="e_convs">${convs.filter(c => !c.arquivada || sel.has(c.id)).map(c => `<span class="chip ${sel.has(c.id) ? 'on' : ''}" data-conv="${c.id}">${c.tipo === 'clt' ? '⚖️ ' : '📄 '}${Util.escape(c.titulo)}${c.arquivada ? ' (arquivada)' : ''}</span>`).join('')}</div>`
+          : '<div class="mini">Nenhuma convenção cadastrada ainda.</div>'}
+        <div class="hint">Toque para vincular <b>uma ou mais</b>. Uma empresa pode seguir 2 convenções, ou o regime CLT quando não segue nenhuma.</div>
+      </div>
+      <button class="btn primary block" data-save-emp="${e.id || ''}">Salvar empresa</button>`;
+  }
+
+  /* ============================================================
+     CONFERÊNCIA
+  ============================================================ */
+  async function viewConferencia(preEmpId) {
+    const [emps, convs] = await Promise.all([DB.list('empresas'), DB.list('convencoes')]);
+    const empOpts = ['<option value="">Selecione a empresa...</option>']
+      .concat(emps.map(e => `<option value="${e.id}" ${preEmpId === e.id ? 'selected' : ''}>${Util.escape(e.nome)}</option>`)).join('');
+
+    return `
+      <div class="view">
+        <div class="view-title">Conferência de folha</div>
+        <p class="view-sub">A conferência usa as regras da convenção vinculada à empresa.</p>
+
+        <div class="card">
+          <div class="field"><label>Empresa</label><select id="cf_emp">${empOpts}</select></div>
+          <div id="cf_vinculo"></div>
+        </div>
+
+        <div class="card">
+          <div class="field"><label>Folha em PDF</label>
+            <div class="drop" id="cf_drop"><b>Toque para anexar</b> a folha de pagamento (PDF)<br><span class="mini">A leitura automática entra no próximo passo</span></div>
+            <input id="cf_pdf" type="file" accept="application/pdf" hidden>
+          </div>
+          <div class="field"><label>Lançamentos variáveis do mês</label>
+            <textarea id="cf_var" placeholder="Ex.: João - 10h extras 50%; Maria - 2 faltas; Pedro afastado desde 05/07 (INSS)..."></textarea>
+            <div class="hint">Digite hora extra, faltas, afastamentos e o que mais tiver de variável.</div>
+          </div>
+          <div class="fab-row">
+            <button class="btn primary grow" id="cf_run">Ver plano de conferência</button>
+            <button class="btn gold grow" id="cf_import">⤵ Importar folha (JSON) e auditar</button>
+          </div>
+          <div class="hint">A folha em PDF é lida pela IA no backend e vira este JSON estruturado, que roda no motor de auditoria.</div>
+        </div>
+
+        <div id="cf_result"></div>
+      </div>`;
+  }
+
+  async function renderVinculo(empId) {
+    const box = $('#cf_vinculo');
+    if (!empId) { box.innerHTML = ''; return; }
+    const emp = await DB.get('empresas', empId);
+    const convs = await DB.list('convencoes');
+    const vinc = (emp.convencaoIds || []).map(id => convs.find(c => c.id === id)).filter(Boolean);
+    if (!vinc.length) {
+      box.innerHTML = `<div class="notice" style="margin-top:6px">⚠️ Esta empresa não tem convenção vinculada. <a data-go="empresas" style="cursor:pointer;color:var(--navy);font-weight:700">Vincular agora ›</a></div>`;
+      return;
+    }
+    box.innerHTML = vinc.map(c => {
+      const st = Util.statusVigencia(c.vigenciaFim);
+      return `<div class="notice" style="margin-top:6px">
+        📄 <b>${Util.escape(c.titulo)}</b> — <span class="badge ${st.cls}">${st.txt}</span>
+        ${c.aprovada ? '' : '<br><span style="color:var(--warn)">Regras ainda não aprovadas.</span>'}</div>`;
+    }).join('');
+  }
+
+  async function rodarConferencia(empId, variaveis) {
+    const result = $('#cf_result');
+    if (!empId) { toast('Selecione a empresa', 'err'); return; }
+    const emp = await DB.get('empresas', empId);
+    const convs = await DB.list('convencoes');
+    const vinc = (emp.convencaoIds || []).map(id => convs.find(c => c.id === id)).filter(Boolean);
+    if (!vinc.length) { toast('Empresa sem convenção vinculada', 'err'); return; }
+
+    // Mostra o "plano de conferência" derivado das regras — prova que o fluxo
+    // empresa → convenção → regras está ligado. O motor completo (ler o PDF e
+    // apontar erros por funcionário) entra quando você mandar uma folha real.
+    const checks = [];
+    vinc.forEach(c => {
+      const r = c.regras || Schema.emptyRegras();
+      (r.pisos || []).forEach(p => checks.push(`Piso de <b>${Util.escape(p.funcao)}</b>: salário ≥ ${Util.formatBRL(Util.parseNum(p.valor))}`));
+      if (r.tempoServico && r.tempoServico.aplica) checks.push(`Triênio/tempo de serviço: <b>${r.tempoServico.percentual || '?'}%</b> por período`);
+      if (r.produtividade && r.produtividade.aplica) checks.push('Produtividade prevista na convenção');
+      if (r.adiantamento && r.adiantamento.obrigatorio) checks.push(`Adiantamento obrigatório de <b>${r.adiantamento.percentual}%</b> até dia ${r.adiantamento.diaLimite}`);
+      (r.estabilidades || []).forEach(e => checks.push(`Estabilidade: ${Util.escape((Schema.tiposEstabilidade.find(t => t.v === e.tipo) || {}).l || e.tipo)}`));
+      checks.push('Encargos: conferir incidência de INSS/FGTS nas rubricas');
+    });
+
+    result.innerHTML = `
+      <div class="section-hd">Plano de conferência (a partir da convenção)</div>
+      <div class="card">
+        <p class="mini" style="margin-top:0">Estas são as verificações que serão aplicadas automaticamente à folha desta empresa:</p>
+        ${checks.map(c => `<div class="list-row">✅ <span>${c}</span></div>`).join('')}
+      </div>
+      <div class="notice gold">
+        🚧 <b>Próximo passo:</b> ligar a leitura automática do PDF da folha + o motor de auditoria (IA).
+        Aí cada item acima vira <b>erro</b> ou <b>alerta</b> por funcionário, com o relatório em PDF.
+        Pra isso eu preciso de <b>uma folha real de exemplo</b> (pode tarjar nomes/CPF).
+      </div>
+      ${variaveis && variaveis.trim() ? `<div class="notice" style="margin-top:10px">📝 Lançamentos anotados:<br>${Util.escape(variaveis).replace(/\n/g, '<br>')}</div>` : ''}`;
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ============================================================
+     HISTÓRICO / DÚVIDAS (esqueleto do MVP)
+  ============================================================ */
+  async function viewHistorico() {
+    return `<div class="view">
+      <div class="view-title">Histórico de folhas</div>
+      <p class="view-sub">Comparativo mês a mês entre as folhas conferidas.</p>
+      ${emptyState('📊', 'Ainda sem folhas conferidas', 'Quando você conferir e aprovar uma folha, ela fica guardada aqui.')}
+      <div class="notice">Aqui vai aparecer, a cada nova folha: quem <b>mudou de cargo</b>, quem <b>saiu</b> (estava na folha passada e sumiu), quem <b>entrou</b>, e variações de salário. Depende do motor de leitura de folha (próximo passo).</div>
+    </div>`;
+  }
+  async function viewDuvidas() {
+    return `<div class="view">
+      <div class="view-title">Dúvidas da convenção</div>
+      <p class="view-sub">Pergunte o que o funcionário tem direito, com base na convenção.</p>
+      <div class="card">
+        <div class="field"><label>Sua pergunta</label>
+          <textarea id="dv_q" placeholder="Ex.: O vigilante com 4 anos de casa tem direito a quantos triênios?"></textarea></div>
+        <button class="btn primary block" id="dv_ask">Perguntar</button>
+      </div>
+      <div class="notice gold">💬 A resposta com base no PDF da convenção usa a IA (Claude) e entra junto com o motor de auditoria. Estou deixando a tela pronta para plugar.</div>
+    </div>`;
+  }
+
+  /* ------------- helpers ------------- */
+  function emptyState(em, t, p) {
+    return `<div class="empty"><div class="em">${em}</div><h3 style="margin:10px 0 0">${t}</h3><p>${p}</p></div>`;
+  }
+  function pathVal(obj, path) { return path.split('.').reduce((o, k) => (o || {})[k], obj); }
+  function pathSet(obj, path, val) {
+    const ks = path.split('.'); let o = obj;
+    for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+    o[ks[ks.length - 1]] = val;
+  }
+
+  /* ------------- render dispatcher ------------- */
+  const VIEWS = {
+    painel: viewPainel, sindicatos: viewSindicatos, convencoes: viewConvencoes,
+    empresas: viewEmpresas, conferencia: viewConferencia, historico: viewHistorico, duvidas: viewDuvidas,
+  };
+  async function render(arg) {
+    renderNav();
+    app.innerHTML = '<div class="view"><div class="empty"><div class="em">⏳</div></div></div>';
+    app.innerHTML = await VIEWS[state.view](arg);
+    if (state.view === 'conferencia') wireConferencia();
+  }
+
+  function wireConferencia() {
+    const emp = $('#cf_emp'); if (!emp) return;
+    if (emp.value) renderVinculo(emp.value);
+    emp.addEventListener('change', () => renderVinculo(emp.value));
+    $('#cf_drop').addEventListener('click', () => $('#cf_pdf').click());
+    $('#cf_pdf').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      $('#cf_drop').classList.add('has'); $('#cf_drop').innerHTML = '📎 ' + Util.escape(f.name);
+    });
+    $('#cf_run').addEventListener('click', () => rodarConferencia($('#cf_emp').value, $('#cf_var').value));
+    $('#cf_import').addEventListener('click', importFolhaPick);
+  }
+
+  /* ---- importar folha estruturada (JSON) e auditar ---- */
+  let _pendingFolha = null;
+  function importFolhaPick() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try { await importFolha(JSON.parse(await f.text())); }
+      catch (e) { toast('Folha inválida: ' + e.message, 'err'); }
+    };
+    inp.click();
+  }
+  async function importFolha(folha) {
+    if (!folha || !folha.funcionarios) return toast('JSON sem "funcionarios"', 'err');
+    const cnpj = (folha.empresaCnpj || '').replace(/\D/g, '');
+    let emp = cnpj ? (await DB.where('empresas', e => (e.cnpj || '') === cnpj))[0] : null;
+    const selId = $('#cf_emp') && $('#cf_emp').value;
+    if (!emp && selId) emp = await DB.get('empresas', selId);
+    if (!emp) { _pendingFolha = folha; return abrirCadastroEmpresaDaFolha(folha, cnpj, null); }
+    const convs = await DB.list('convencoes');
+    const vinc = (emp.convencaoIds || []).map(id => convs.find(c => c.id === id)).filter(Boolean);
+    if (!vinc.length) { _pendingFolha = folha; toast('Marque a convenção desta empresa para auditar', 'warn'); return abrirCadastroEmpresaDaFolha(folha, cnpj, emp); }
+    const conv = vinc[0];
+    const cfg = await DB.getConfig();
+    const rel = Audit.run(folha, conv, cfg);
+    await DB.add('folhas', Object.assign({ empresaId: emp.id, auditadaEm: new Date().toISOString() }, folha));
+    renderRelatorio(rel, folha, conv, emp, vinc.length);
+  }
+
+  async function abrirCadastroEmpresaDaFolha(folha, cnpj, empExistente) {
+    const convs = await DB.list('convencoes');
+    const e = empExistente || { nome: folha.empresaNome || '', cnpj };
+    const body = openModal(formEmpresa(e, convs));
+    const nota = empExistente
+      ? '🔗 Esta empresa está cadastrada, mas <b>sem convenção</b>. Marque a(s) convenção(ões) e salve para eu auditar a folha.'
+      : '🆕 A empresa da folha <b>não está cadastrada</b>. Já puxei a razão social e o CNPJ — só marque a(s) convenção(ões) e salve.';
+    body.insertAdjacentHTML('afterbegin', `<div class="notice gold" style="margin-bottom:12px">${nota}</div>`);
+    if (!convs.length) body.insertAdjacentHTML('beforeend', '<div class="notice" style="margin-top:10px">Você ainda não tem convenções. Cadastre/importe a convenção desta categoria primeiro (ou crie o regime CLT).</div>');
+  }
+
+  function relatorioHtml(rel) {
+    const r = rel.resumo;
+    const grp = (arr, cls, icon, titulo) => arr.length ? `
+      <div class="result-group ${cls}">
+        <div class="gh">${icon} ${titulo} (${arr.length})</div>
+        ${arr.map(it => `<div class="item"><b>${Util.escape(it.titulo)}</b>${(it.valor != null && !isNaN(it.valor) && Math.abs(it.valor) > 0.001) ? ` <span class="badge ${cls}">${Util.formatBRL(Math.abs(it.valor))}</span>` : ''}
+          <small>${Util.escape(it.detalhe)}</small>
+          ${it.funcs.length ? `<small>👤 ${it.funcs.map(Util.escape).join(', ')}</small>` : ''}</div>`).join('')}
+      </div>` : '';
+    return `
+      <div id="rel">
+        <div class="card">
+          <h3 style="margin:0 0 6px">Relatório de conferência de folha</h3>
+          <div class="kv"><span>Empresa: <b>${Util.escape(r.empresa || '')}</b></span><span>CNPJ: <b>${Util.formatCNPJ(r.cnpj || '')}</b></span></div>
+          <div class="kv"><span>Competência: <b>${Util.escape(r.competencia || '')}</b></span><span>Funcionários: <b>${r.nFunc}</b></span></div>
+          <div class="kv"><span>Convenção: <b>${Util.escape(r.convencao || '')}</b></span></div>
+          <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+            <span class="badge err">${rel.erros.length} erro(s)</span>
+            <span class="badge warn">${rel.alertas.length} alerta(s)</span>
+            <span class="badge ok">${rel.conformes.length} conforme(s)</span>
+          </div>
+        </div>
+        ${grp(rel.erros, 'err', '⛔', 'ERROS — precisa alterar')}
+        ${grp(rel.alertas, 'warn', '⚠️', 'ALERTAS — verificar')}
+        ${rel.conformes.length ? `<details class="card"><summary style="cursor:pointer;font-weight:700">✅ Conformes (${rel.conformes.length}) — o que está certo</summary>
+          <div style="margin-top:8px">${rel.conformes.map(it => `<div class="list-row">✅ <span><b>${Util.escape(it.titulo)}</b><br><span class="mini">${Util.escape(it.detalhe)}</span></span></div>`).join('')}</div></details>` : ''}
+        <div class="mini" style="text-align:center;margin-top:14px">Folha Certa · Totali Contabilidade · gerado em ${Util.formatDateBR(new Date().toISOString().slice(0, 10))}</div>
+      </div>`;
+  }
+  function renderRelatorio(rel, folha, conv, emp, nConv) {
+    const html = relatorioHtml(rel);
+    const box = $('#cf_result');
+    box.innerHTML = `<div class="section-hd">Resultado da conferência</div>
+      ${nConv > 1 ? '<div class="notice" style="margin-bottom:10px">Esta empresa tem mais de uma convenção. Auditei pela primeira; o mapeamento por função entre convenções entra numa próxima etapa.</div>' : ''}
+      <div class="fab-row no-print"><button class="btn primary" id="rel_pdf">🖨️ Salvar / Imprimir PDF</button></div>
+      ${html}`;
+    const btn = $('#rel_pdf');
+    if (btn) btn.addEventListener('click', () => salvarPdf(html));
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function salvarPdf(html) {
+    const area = document.createElement('div');
+    area.id = 'printArea';
+    area.innerHTML = html;
+    document.body.appendChild(area);
+    window.print();
+    setTimeout(() => area.remove(), 500);
+  }
+
+  /* ---- dados de demonstração (fictícios, sem CPF real) ---- */
+  async function seedDemo() {
+    const sind = await DB.add('sindicatos', { nome: 'SINDHOTRE - Hotelaria e Restaurantes/SE', cnpj: '06084597000186', categoria: 'Hotelaria e alimentação' });
+    const regras = Object.assign(Schema.emptyRegras(), {
+      pisos: [{ funcao: 'Piso geral da categoria', valor: 1670, jornada: '44h semanais' }],
+      tempoServico: { aplica: false, tipo: 'trienio' },
+      adicionais: { horaExtra: 50, horaExtra100: 100, noturno: 20, insalubridade: '', periculosidade: '' },
+      estabilidades: [{ tipo: 'pre_aposentadoria', descricao: '12 meses antes do direito, mín. 5 anos na empresa', duracaoMeses: 12 }],
+      beneficios: [
+        { tipo: 'plano_saude', valor: 210.78, condicoes: 'empresa 50% / empregado 50%' },
+        { tipo: 'plano_odontologico', valor: 9.50, condicoes: 'pago pela empresa' },
+        { tipo: 'auxilio_assistencial', valor: 14.90, condicoes: 'pago pela empresa' },
+      ],
+      contribuicoes: [
+        { tipo: 'assistencial', percentual: 1.5, desconto: 'empregado' },
+        { tipo: 'negocial', valor: 20, desconto: 'empresa', obs: 'R$ 20/empregado ao SEHASE em setembro' },
+      ],
+      observacoes: 'Quebra de caixa 6% para funções de caixa. HE 50% (100% em feriados). Reflexos do noturno em DSR/férias/13º.',
+    });
+    const conv = await DB.add('convencoes', { tipo: 'convencao', sindicatoId: sind.id, titulo: 'CCT 2026/2028 SINDHOTRE (demonstração)', numeroRegistro: 'SE000084/2026', abrangencia: 'Aracaju/SE', uf: 'SE', dataBaseMes: 'Maio', vigenciaInicio: '2026-05-01', vigenciaFim: '2028-04-30', aprovada: true, regras });
+    const emp = await DB.add('empresas', { nome: 'Restaurante Sabor Demo Ltda', cnpj: '11222333000181', convencaoIds: [conv.id] });
+    const baseRub = [
+      { descricao: 'HORAS NORMAIS', valor: 1322.97, tipo: 'P' }, { descricao: 'HORAS NOTURNAS', valor: 347.03, tipo: 'P' },
+      { descricao: 'REFLEXO HORAS ADIC. NOTURNO', valor: 10.68, tipo: 'P' }, { descricao: 'ADICIONAL NOTURNO', valor: 69.41, tipo: 'P' },
+      { descricao: 'I.N.S.S.', valor: 133.18, tipo: 'D' }, { descricao: 'CONTRIBUICAO SINDICAL', valor: 16.70, tipo: 'D' },
+    ];
+    const mkF = (nome, cargo, adm) => ({ nome, cargo, admissao: adm, situacao: 'Trabalhando', salario: 1670, horasMes: 220, rubricas: baseRub, proventos: 1750.09, descontos: 149.88, liquido: 1600.21, baseINSS: 1750.09, baseFGTS: 1750.09, valorFGTS: 140 });
+    const folha = {
+      empresaNome: 'Restaurante Sabor Demo Ltda', empresaCnpj: '11222333000181', competencia: '06/2026', emitidoEm: '2026-06-23', regime: 'simples',
+      totais: { proventos: 8750.45, descontos: 749.40, liquido: 8001.05, baseFGTS: 8750.45, valorFGTS: 700, inssSegurados: 665.90, inssEmpresa: 0 },
+      funcionarios: [
+        mkF('João da Silva', 'GARÇON', '2025-09-01'),
+        mkF('Maria Souza', 'GARÇONETE', '2025-09-01'),
+        mkF('Pedro Santos', 'CHURRASQUEIRO', '2025-10-24'),
+        mkF('Carlos Lima', 'GARÇON', '2025-08-15'),
+        mkF('Ana Oliveira', 'ATENDENTE DE BALCÃO', '2026-05-25'),
+      ],
+    };
+    toast('Demonstração carregada ✓', 'ok');
+    state.view = 'conferencia'; renderNav();
+    app.innerHTML = await viewConferencia(emp.id); wireConferencia(); window.scrollTo(0, 0);
+    await importFolha(folha);
+  }
+
+  /* ============================================================
+     EVENTOS (delegação)
+  ============================================================ */
+  document.addEventListener('click', async (ev) => {
+    const t = ev.target.closest('[data-go],[data-close],[data-open-conv],[data-new-sind],[data-edit-sind],[data-del-sind],[data-save-sind],[data-new-conv],[data-import-conv],[data-edit-conv],[data-del-conv],[data-save-conv],[data-regras],[data-add-piso],[data-add-est],[data-add-ben],[data-rm-row],[data-save-regras],[data-aprov],[data-new-emp],[data-edit-emp],[data-del-emp],[data-save-emp],[data-conf-emp],[data-conv],[data-toggle],[data-export],[data-new-clt],[data-config],[data-save-config],[data-mediador],[data-mediador-open],[data-mediador-update],[data-seed-demo]');
+    if (!t) return;
+
+    // navegação
+    if (t.dataset.go) return go(t.dataset.go);
+    if (t.hasAttribute('data-seed-demo')) return seedDemo();
+    if (t.hasAttribute('data-export')) return exportBackup();
+    if (t.hasAttribute('data-close')) return closeModal();
+    if (t.dataset.openConv) { go('convencoes'); return; }
+
+    /* ---- Sindicatos ---- */
+    if (t.hasAttribute('data-new-sind')) return void openModal(formSindicato());
+    if (t.dataset.editSind) return void openModal(formSindicato(await DB.get('sindicatos', t.dataset.editSind)));
+    if (t.dataset.delSind) {
+      if (confirm('Excluir este sindicato?')) { await DB.remove('sindicatos', t.dataset.delSind); toast('Sindicato excluído'); render(); }
+      return;
+    }
+    if (t.hasAttribute('data-save-sind')) {
+      const nome = $('#f_nome').value.trim();
+      if (!nome) return toast('Informe o nome', 'err');
+      const cnpj = $('#f_cnpj').value.replace(/\D/g, '');
+      if (cnpj && !Util.validaCNPJ(cnpj)) return toast('CNPJ inválido', 'err');
+      const data = { nome, cnpj, categoria: $('#f_cat').value.trim() };
+      if (t.dataset.saveSind) await DB.update('sindicatos', t.dataset.saveSind, data);
+      else await DB.add('sindicatos', data);
+      closeModal(); toast('Salvo', 'ok'); render();
+      return;
+    }
+
+    /* ---- Convenções ---- */
+    if (t.hasAttribute('data-new-conv')) {
+      const sinds = await DB.list('sindicatos');
+      return void openModal(formConvencao(null, sinds));
+    }
+    if (t.dataset.editConv) {
+      const [c, sinds] = await Promise.all([DB.get('convencoes', t.dataset.editConv), DB.list('sindicatos')]);
+      return void wireConvForm(openModal(formConvencao(c, sinds)), c);
+    }
+    if (t.dataset.delConv) {
+      if (confirm('Excluir esta convenção?')) { await DB.remove('convencoes', t.dataset.delConv); toast('Convenção excluída'); render(); }
+      return;
+    }
+    if (t.hasAttribute('data-save-conv')) return saveConv(t.dataset.saveConv);
+    if (t.hasAttribute('data-import-conv')) return importConvPick();
+    if (t.hasAttribute('data-new-clt')) return createCltRegime();
+    if (t.hasAttribute('data-config')) return openConfig();
+    if (t.hasAttribute('data-save-config')) return saveConfig();
+    if (t.hasAttribute('data-mediador-open')) { const w = window.open(MEDIADOR_URL, '_blank', 'noopener'); if (!w) toast('Abra no navegador: mediador.trabalho.gov.br', 'warn'); return; }
+    if (t.dataset.mediadorUpdate) return atualizarConvencaoDoMediador(t.dataset.mediadorUpdate);
+    if (t.dataset.mediador) return openMediadorModal(t.dataset.mediador);
+    if (t.dataset.regras) return editorRegras(t.dataset.regras);
+
+    /* ---- Editor de regras ---- */
+    if (t.hasAttribute('data-add-piso')) { $('#reg_pisos').insertAdjacentHTML('beforeend', pisoRow()); cleanEmptyMini('#reg_pisos'); return; }
+    if (t.hasAttribute('data-add-est')) { $('#reg_est').insertAdjacentHTML('beforeend', estRow()); cleanEmptyMini('#reg_est'); return; }
+    if (t.hasAttribute('data-add-ben')) { $('#reg_ben').insertAdjacentHTML('beforeend', benRow()); cleanEmptyMini('#reg_ben'); return; }
+    if (t.hasAttribute('data-rm-row')) { t.closest('.list-row').remove(); return; }
+    if (t.hasAttribute('data-toggle')) {
+      const path = t.dataset.toggle; const cur = pathVal(_regrasCache, path);
+      pathSet(_regrasCache, path, !cur);
+      t.classList.toggle('on', !cur); t.textContent = (!cur ? '✓ ' : '') + t.textContent.replace('✓ ', '');
+      return;
+    }
+    if (t.hasAttribute('data-aprov')) { t.classList.toggle('on'); t.dataset.checked = t.classList.contains('on') ? '1' : ''; t.textContent = (t.classList.contains('on') ? '✓ ' : '') + 'Marcar regras como conferidas/aprovadas'; return; }
+    if (t.hasAttribute('data-save-regras')) return saveRegras();
+
+    /* ---- Empresas ---- */
+    if (t.hasAttribute('data-new-emp')) { const convs = await DB.list('convencoes'); return void openModal(formEmpresa(null, convs)); }
+    if (t.dataset.editEmp) { const [e, convs] = await Promise.all([DB.get('empresas', t.dataset.editEmp), DB.list('convencoes')]); return void openModal(formEmpresa(e, convs)); }
+    if (t.dataset.delEmp) { if (confirm('Excluir esta empresa?')) { await DB.remove('empresas', t.dataset.delEmp); toast('Empresa excluída'); render(); } return; }
+    if (t.dataset.confEmp) { state.view = 'conferencia'; renderNav(); app.innerHTML = await viewConferencia(t.dataset.confEmp); wireConferencia(); window.scrollTo(0, 0); return; }
+    if (t.dataset.conv) { t.classList.toggle('on'); return; }
+    if (t.hasAttribute('data-save-emp')) {
+      const nome = $('#e_nome').value.trim();
+      if (!nome) return toast('Informe o nome', 'err');
+      const cnpj = $('#e_cnpj').value.replace(/\D/g, '');
+      if (cnpj && !Util.validaCNPJ(cnpj)) return toast('CNPJ inválido', 'err');
+      const convencaoIds = Array.from(document.querySelectorAll('#e_convs .chip.on')).map(x => x.dataset.conv);
+      const data = { nome, cnpj, convencaoIds };
+      const empSaved = t.dataset.saveEmp ? await DB.update('empresas', t.dataset.saveEmp, data) : await DB.add('empresas', data);
+      closeModal(); toast('Salvo', 'ok');
+      // veio do fluxo "importar folha de empresa não cadastrada"? continua a auditoria
+      if (_pendingFolha) {
+        const pf = _pendingFolha; _pendingFolha = null;
+        if (!convencaoIds.length) { toast('Empresa salva. Vincule uma convenção para auditar.', 'warn'); return render(); }
+        state.view = 'conferencia'; renderNav();
+        app.innerHTML = await viewConferencia(empSaved.id); wireConferencia(); window.scrollTo(0, 0);
+        await importFolha(pf);
+        return;
+      }
+      render();
+      return;
+    }
+  });
+
+  // fecha modal/drawer clicando fora
+  $('#modalScrim').addEventListener('click', e => { if (e.target.id === 'modalScrim') closeModal(); });
+  $('#scrim').addEventListener('click', closeDrawer);
+  $('#menuBtn').addEventListener('click', openDrawer);
+
+  // CNPJ mask ao vivo (delegado no input)
+  document.addEventListener('input', e => {
+    if (['f_cnpj', 'e_cnpj'].includes(e.target.id)) e.target.value = Util.formatCNPJ(e.target.value);
+  });
+
+  /* ---- form convenção: upload + save ---- */
+  function wireConvForm(body, c) {
+    const drop = $('#c_drop'), pdf = $('#c_pdf');
+    if (drop) {
+      drop.addEventListener('click', () => pdf.click());
+      pdf.addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        drop.classList.add('has'); drop.innerHTML = '📎 ' + Util.escape(f.name); drop.dataset.name = f.name;
+      });
+    }
+  }
+  async function saveConv(id) {
+    const sindicatoId = $('#c_sind').value;
+    const titulo = $('#c_tit').value.trim();
+    if (!sindicatoId) return toast('Escolha o sindicato', 'err');
+    if (!titulo) return toast('Informe o título', 'err');
+    const drop = $('#c_drop');
+    const data = {
+      sindicatoId, titulo,
+      numeroRegistro: $('#c_reg').value.trim(),
+      dataBaseMes: $('#c_base').value,
+      abrangencia: $('#c_abr').value.trim(),
+      uf: ($('#c_uf').value || '').trim().toUpperCase(),
+      vigenciaInicio: $('#c_vi').value,
+      vigenciaFim: $('#c_vf').value,
+      pdfName: (drop && drop.dataset.name) || (await maybeKeepPdf(id)),
+    };
+    if (id) await DB.update('convencoes', id, data);
+    else { data.regras = Schema.emptyRegras(); data.aprovada = false; await DB.add('convencoes', data); }
+    closeModal(); toast('Convenção salva', 'ok'); render();
+  }
+  async function maybeKeepPdf(id) { if (!id) return ''; const c = await DB.get('convencoes', id); return c ? c.pdfName || '' : ''; }
+
+  /* ---- importar convenção (JSON gerado pela IA) ---- */
+  function importConvPick() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try { await importConvencao(JSON.parse(await f.text())); }
+      catch (e) { toast('Arquivo inválido: ' + e.message, 'err'); }
+    };
+    inp.click();
+  }
+  async function importConvencao(bundle, opts) {
+    opts = opts || {};
+    if (!bundle || !bundle.convencao) { toast('JSON sem "convencao"', 'err'); return null; }
+    const s = bundle.sindicato || {};
+    const cnpj = (s.cnpj || '').replace(/\D/g, '');
+    let sind = null;
+    if (cnpj) sind = (await DB.where('sindicatos', x => (x.cnpj || '') === cnpj))[0];
+    if (!sind && s.nome) sind = (await DB.where('sindicatos', x => x.nome === s.nome))[0];
+    if (!sind) sind = await DB.add('sindicatos', { nome: s.nome || 'Sindicato importado', cnpj, categoria: s.categoria || '' });
+    const c = bundle.convencao;
+    const rec = Object.assign({ regras: Schema.emptyRegras(), aprovada: false }, c, { sindicatoId: sind.id });
+    // mescla regras importadas sobre a estrutura padrão (garante todos os campos)
+    rec.regras = Object.assign(Schema.emptyRegras(), c.regras || {});
+    if (!rec.uf) rec.uf = Util.parseUF(rec.abrangencia);
+    const saved = await DB.add('convencoes', rec);
+    if (!opts.silent) { toast('Convenção importada ✓ — revise e aprove', 'ok'); render(); }
+    return saved;
+  }
+
+  /* ---- Mediador (verificar / atualizar convenção vencida) ---- */
+  const MEDIADOR_URL = 'https://mediador.trabalho.gov.br/sistemas/mediador/ConsultarInstColetivo';
+  async function openMediadorModal(convId) {
+    const c = await DB.get('convencoes', convId);
+    if (!c) return;
+    const sind = c.sindicatoId ? await DB.get('sindicatos', c.sindicatoId) : null;
+    const cnpj = sind && sind.cnpj ? Util.formatCNPJ(sind.cnpj) : '(cadastre o CNPJ no sindicato)';
+    const uf = c.uf || Util.parseUF(c.abrangencia) || '—';
+    const st = Util.statusVigencia(c.vigenciaFim);
+    openModal(`
+      <div class="mh"><h3>Procurar no Mediador</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="notice ${st.dias !== null && st.dias < 0 ? '' : 'gold'}" style="margin-bottom:12px">
+        <b>${Util.escape(c.titulo)}</b><br>${st.txt}
+      </div>
+      <p class="mini" style="margin:0 2px 6px">No site, vá em <b>Consulta → Instrumentos Coletivos Registrados</b> e preencha:</p>
+      <div class="card" style="margin:6px 0">
+        <div class="list-row"><span>CNPJ do sindicato</span><span class="grow"></span><b>${cnpj}</b></div>
+        <div class="list-row"><span>Vigência</span><span class="grow"></span><b>Ativa</b></div>
+        <div class="list-row"><span>UF da convenção</span><span class="grow"></span><b>${uf}</b></div>
+        <div class="mini" style="margin-top:6px">Clique em <b>Pesquisar</b> e, se houver uma mais nova, baixe o PDF.</div>
+      </div>
+      <button class="btn primary block" data-mediador-open style="margin-bottom:12px">🌐 Abrir o Mediador</button>
+      <div class="divider"></div>
+      <p class="mini" style="margin:0 2px 8px">Baixou a convenção nova? A IA lê o PDF e gera o JSON; aqui você importa, eu <b>comparo</b> com a atual, <b>re-vinculo</b> as empresas e <b>guardo a antiga</b> no histórico.</p>
+      <button class="btn gold block" data-mediador-update="${convId}">⤵ Importar a nova e atualizar</button>`);
+  }
+
+  async function atualizarConvencaoDoMediador(oldId) {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try {
+        const bundle = JSON.parse(await f.text());
+        const old = await DB.get('convencoes', oldId);
+        const novo = await importConvencao(bundle, { silent: true });
+        if (!novo) return;
+        const emps = await DB.where('empresas', e => (e.convencaoIds || []).includes(oldId));
+        for (const e of emps) {
+          await DB.update('empresas', e.id, { convencaoIds: e.convencaoIds.map(id => id === oldId ? novo.id : id) });
+        }
+        await DB.update('convencoes', oldId, { arquivada: true, substituidaPor: novo.id });
+        await DB.update('convencoes', novo.id, { substituiu: oldId });
+        mostrarDiffConvencao(old, novo, emps.length);
+      } catch (e) { toast('Arquivo inválido: ' + e.message, 'err'); }
+    };
+    inp.click();
+  }
+
+  function mostrarDiffConvencao(old, novo, nEmp) {
+    const pisoOld = (old.regras && old.regras.pisos && old.regras.pisos[0]) ? old.regras.pisos[0].valor : null;
+    const pisoNew = (novo.regras && novo.regras.pisos && novo.regras.pisos[0]) ? novo.regras.pisos[0].valor : null;
+    render();
+    openModal(`
+      <div class="mh"><h3>Convenção atualizada ✓</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="card">
+        <div class="list-row"><span>Piso</span><span class="grow"></span><b>${Util.formatBRL(pisoOld)} → ${Util.formatBRL(pisoNew)}</b></div>
+        <div class="list-row"><span>Vigência até</span><span class="grow"></span><b>${Util.formatDateBR(old.vigenciaFim)} → ${Util.formatDateBR(novo.vigenciaFim)}</b></div>
+        <div class="list-row"><span>Registro MTE</span><span class="grow"></span><b>${Util.escape(old.numeroRegistro || '—')} → ${Util.escape(novo.numeroRegistro || '—')}</b></div>
+      </div>
+      <div class="notice gold"><b>${nEmp}</b> empresa(s) re-vinculada(s) à nova convenção. A anterior foi guardada no histórico. Revise e aprove as regras da nova.</div>
+      <button class="btn primary block" data-regras="${novo.id}">Revisar regras da nova</button>`);
+  }
+
+  /* ---- regime CLT (sem convenção) ---- */
+  async function createCltRegime() {
+    const cfg = await DB.getConfig();
+    if (!cfg.salarioMinimo) { toast('Defina o salário mínimo em Configurações primeiro', 'err'); return openConfig(); }
+    const existing = (await DB.where('convencoes', c => c.tipo === 'clt'))[0];
+    if (existing) { toast('Já existe um regime CLT', 'err'); return; }
+    await DB.add('convencoes', {
+      tipo: 'clt', sindicatoId: '',
+      titulo: 'CLT — Salário Mínimo (sem convenção)',
+      dataBaseMes: '', vigenciaInicio: '', vigenciaFim: '',
+      regras: Schema.cltRegras(cfg.salarioMinimo), aprovada: true,
+    });
+    toast('Regime CLT criado ✓', 'ok'); render();
+  }
+
+  /* ---- configurações (salário mínimo) ---- */
+  async function openConfig() {
+    closeDrawer();
+    const cfg = await DB.getConfig();
+    openModal(`
+      <div class="mh"><h3>Configurações</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="field"><label>Salário mínimo nacional vigente (R$)</label>
+        <input id="cfg_sm" inputmode="decimal" value="${cfg.salarioMinimo ?? ''}" placeholder="Ex.: 1518,00">
+        <div class="hint">Usado no regime CLT (sem convenção). Atualize a cada virada de ano — o piso do regime CLT é ajustado automaticamente.</div>
+      </div>
+      <button class="btn primary block" data-save-config>Salvar</button>`);
+  }
+  async function saveConfig() {
+    const sm = Util.parseNum($('#cfg_sm').value);
+    if (!sm) return toast('Informe o salário mínimo', 'err');
+    await DB.setConfig({ salarioMinimo: sm });
+    // atualiza o piso dos regimes CLT existentes
+    const clts = await DB.where('convencoes', c => c.tipo === 'clt');
+    for (const c of clts) {
+      const r = c.regras || Schema.cltRegras(sm);
+      if (r.pisos && r.pisos[0]) r.pisos[0].valor = sm; else r.pisos = [{ funcao: 'Salário mínimo nacional', valor: sm, jornada: '44h semanais' }];
+      await DB.update('convencoes', c.id, { regras: r });
+    }
+    closeModal(); toast('Configurações salvas', 'ok'); render();
+  }
+
+  async function exportBackup() {
+    const data = await DB.dump();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'folha-certa-backup.json'; a.click();
+    URL.revokeObjectURL(url);
+    closeDrawer(); toast('Backup exportado', 'ok');
+  }
+
+  /* ---- salvar regras (lê o editor) ---- */
+  async function saveRegras() {
+    const r = _regrasCache;
+    // pisos
+    r.pisos = Array.from(document.querySelectorAll('.piso-row')).map(row => ({
+      funcao: row.querySelector('.p_func').value.trim(),
+      valor: Util.parseNum(row.querySelector('.p_val').value),
+      jornada: row.querySelector('.p_jor').value.trim(),
+    })).filter(p => p.funcao);
+    // estabilidades
+    r.estabilidades = Array.from(document.querySelectorAll('.est-row')).map(row => ({
+      tipo: row.querySelector('.e_tipo').value,
+      duracaoMeses: Util.parseNum(row.querySelector('.e_dur').value),
+    }));
+    // beneficios
+    r.beneficios = Array.from(document.querySelectorAll('.ben-row')).map(row => ({
+      tipo: row.querySelector('.b_tipo').value,
+      valor: Util.parseNum(row.querySelector('.b_val').value),
+    }));
+    // campos data-bind
+    document.querySelectorAll('[data-bind]').forEach(el => {
+      const path = el.dataset.bind;
+      let v = el.value;
+      if (['tempoServico.percentual', 'produtividade.valor', 'adiantamento.percentual', 'adiantamento.diaLimite',
+        'adicionais.horaExtra', 'adicionais.horaExtra100', 'adicionais.noturno'].includes(path)) v = Util.parseNum(v);
+      pathSet(r, path, v);
+    });
+    const aprovada = $('#chk_aprov').classList.contains('on');
+    await DB.update('convencoes', _regrasConvId, { regras: r, aprovada });
+    closeModal(); toast(aprovada ? 'Regras aprovadas ✓' : 'Regras salvas', 'ok'); render();
+  }
+
+  function cleanEmptyMini(sel) {
+    const box = $(sel); const mini = box.querySelector(':scope > .mini'); if (mini) mini.remove();
+  }
+
+  /* boot */
+  render();
+  window.FC = { go, DB, toast, Util, Schema, Audit, importConvencao, importFolha, exportBackup, createCltRegime, openMediadorModal }; // atalho p/ debug/console
+})();
+
+</script>
+</body></html>

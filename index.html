@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0B2140">
+  <title>Folha Certa</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Folha Certa">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <button class="iconbtn" id="menuBtn" aria-label="Menu">☰</button>
+    <div class="brand">
+      <span class="logo">FC</span>
+      <div>Folha Certa<small>Conferência por convenção</small></div>
+    </div>
+    <span class="spacer"></span>
+  </header>
+
+  <main id="app"><!-- render dinâmico --></main>
+
+  <!-- Drawer lateral -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dh"><b>Folha Certa</b><br><small>Totali Contabilidade</small></div>
+    <nav id="drawerNav"></nav>
+    <div style="margin-top:auto;padding:12px;border-top:1px solid var(--line)">
+      <button class="btn ghost block sm" data-config style="margin-bottom:8px">⚙ Configurações</button>
+      <button class="btn ghost block sm" data-export>⤴ Exportar backup (JSON)</button>
+    </div>
+  </aside>
+
+  <!-- Bottom nav -->
+  <nav class="bottomnav" id="bottomnav"></nav>
+
+  <!-- Modal -->
+  <div class="modal-scrim" id="modalScrim"><div class="modal" id="modalBody"></div></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/db.js?v=7"></script>
+  <script src="js/schema.js?v=7"></script>
+  <script src="js/audit.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
+  <script>
+    // Service worker só em http/https (no file:// não registra, e tudo bem)
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>

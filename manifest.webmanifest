@@ -1,0 +1,16 @@
+{
+  "name": "Folha Certa — Conferência por convenção",
+  "short_name": "Folha Certa",
+  "description": "Auditoria de folha de pagamento com base na convenção coletiva.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B2140",
+  "theme_color": "#0B2140",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
