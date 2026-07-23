@@ -5,7 +5,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const app = $('#app');
 
-  const APP_VERSION = 'v15 · 23/07/2026';   // aparece no rodapé do menu ☰
+  const APP_VERSION = 'v16 · 23/07/2026';   // aparece no rodapé do menu ☰
 
   const NAV = [
     { id: 'painel', label: 'Painel', icon: '🏠', primary: true },

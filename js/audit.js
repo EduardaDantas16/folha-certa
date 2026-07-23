@@ -26,6 +26,16 @@ const Audit = (function () {
   function contribAssistencial(regras) {
     return ((regras && regras.contribuicoes) || []).find(x => /assistenc/.test(norm(x.tipo)) && (x.percentual || x.cronograma));
   }
+  // período (em anos) e nome do adicional por tempo de serviço, conforme o tipo da CCT
+  function tempoServicoInfo(ts) {
+    const t = norm(ts && ts.tipo);
+    if (/anuenio|anu.nio/.test(t)) return { anos: 1, nome: 'Anuênio' };
+    if (/bienio|bi.nio/.test(t)) return { anos: 2, nome: 'Biênio' };
+    if (/quadrienio|quadri.nio/.test(t)) return { anos: 4, nome: 'Quadriênio' };
+    if (/quinquenio|quinqu.nio|quinqu/.test(t)) return { anos: 5, nome: 'Quinquênio' };
+    if (/trienio|tri.nio/.test(t)) return { anos: 3, nome: 'Triênio' };
+    return { anos: 3, nome: 'Adicional por tempo de serviço' };
+  }
   // percentual da assistencial na competência (cronograma [{competencia:"06/2026",percentual:2}] tem prioridade)
   function pctAssistencial(assist, competencia) {
     if (assist && Array.isArray(assist.cronograma) && competencia) {
@@ -123,21 +133,23 @@ const Audit = (function () {
           `"${f.cargo}" pode exercer função de caixa. Se sim, falta o adicional de 6% (${brl(round2(sal * 0.06))}).`, nome);
       }
 
-      // 5) TRIÊNIO / TEMPO DE SERVIÇO
+      // 5) ADICIONAL POR TEMPO DE SERVIÇO (triênio, quinquênio, etc. — conforme a CCT)
       if (temTrienio && f.admissao) {
+        const ts = tempoServicoInfo(regras.tempoServico);
         const anos = anosEntre(f.admissao, folha.competencia);
-        const periodo = 3;
-        const devidos = Math.floor(anos / periodo);
-        const rubT = acharRubrica(f, /trienio|tri.nio|tempo de servico|anuenio|quinquenio/, 'P');
+        const periodo = ts.anos;
+        const teto = money(regras.tempoServico.teto) || 99;
+        const devidos = Math.min(Math.floor(anos / periodo), teto);
+        const rubT = acharRubrica(f, /trienio|tri.nio|bienio|bi.nio|anuenio|anu.nio|quadrienio|quinquenio|quinqu.nio|tempo de servico|ad.*tempo/, 'P');
         if (devidos >= 1 && !rubT) {
-          add('erro', 'Triênio/tempo de serviço não lançado',
-            `${anos.toFixed(1)} anos de casa → ${devidos} período(s). A CCT prevê ${regras.tempoServico.percentual}% por período.`, nome);
+          add('erro', `${ts.nome} não lançado`,
+            `${nome}: ${anos.toFixed(1)} anos de casa → ${devidos} ${ts.nome.toLowerCase()}(s) a cada ${periodo} anos. A CCT prevê ${regras.tempoServico.percentual}% por período.`, nome);
         }
-        // perto de completar (alerta)
+        // perto de completar novo período (alerta) — só se ainda não bateu o teto
         const faltaAno = periodo - (anos % periodo);
-        if (faltaAno <= 60 / 365) {
-          add('alerta', 'Perto de completar triênio',
-            `${nome} completa novo período em breve (${anos.toFixed(1)} anos). Programar o lançamento.`, nome);
+        if (faltaAno <= 60 / 365 && Math.floor(anos / periodo) < teto) {
+          add('alerta', `Perto de completar ${ts.nome.toLowerCase()}`,
+            `${nome} completa novo período (a cada ${periodo} anos) em breve — está com ${anos.toFixed(1)} anos. Programar o lançamento.`, nome);
         }
       }
 

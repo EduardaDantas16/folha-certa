@@ -1,19 +1,19 @@
 /* sw.js — cache para funcionar offline (estratégia network-first).
    Sempre tenta a rede primeiro (pega a versão nova quando online) e usa o
    cache como reserva quando estiver offline. */
-const CACHE = 'folha-certa-v9';
+const CACHE = 'folha-certa-v10';
 const ASSETS = [
   './',
   './index.html',
   './assets/styles.css',
   './vendor/pdf.min.js',
   './vendor/pdf.worker.min.js',
-  './js/db.js?v=15',
-  './js/schema.js?v=15',
-  './js/audit.js?v=15',
-  './js/ia.js?v=15',
-  './js/convert.js?v=15',
-  './js/app.js?v=15',
+  './js/db.js?v=16',
+  './js/schema.js?v=16',
+  './js/audit.js?v=16',
+  './js/ia.js?v=16',
+  './js/convert.js?v=16',
+  './js/app.js?v=16',
   './manifest.webmanifest',
   './assets/icon.svg',
 ];
