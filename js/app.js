@@ -556,16 +556,53 @@
     if (b) b.addEventListener('click', () => salvarPdf(html));
   }
   async function viewDuvidas() {
+    const ativas = (await DB.list('convencoes')).filter(c => !c.arquivada);
+    if (!ativas.length) return `<div class="view">
+      <div class="view-title">Dúvidas da convenção</div>
+      <p class="view-sub">Pergunte o que o funcionário tem direito, com base na convenção.</p>
+      ${emptyState('💬', 'Nenhuma convenção cadastrada', 'Cadastre ou importe uma convenção primeiro. Aí você pode perguntar sobre os direitos dela aqui.')}
+    </div>`;
+    const opts = ativas.map(c => `<option value="${c.id}">${Util.escape(c.titulo || 'Convenção')}</option>`).join('');
     return `<div class="view">
       <div class="view-title">Dúvidas da convenção</div>
       <p class="view-sub">Pergunte o que o funcionário tem direito, com base na convenção.</p>
       <div class="card">
+        <div class="field"><label>Convenção</label>
+          <select id="dv_conv">${opts}</select></div>
         <div class="field"><label>Sua pergunta</label>
-          <textarea id="dv_q" placeholder="Ex.: O vigilante com 4 anos de casa tem direito a quantos triênios?"></textarea></div>
+          <textarea id="dv_q" placeholder="Ex.: O caixa com 4 anos de casa tem direito a quantos triênios e a quebra de caixa?"></textarea></div>
         <button class="btn primary block" id="dv_ask">Perguntar</button>
+        <div id="dv_status" class="mini" style="margin-top:8px"></div>
       </div>
-      <div class="notice gold">💬 A resposta com base no PDF da convenção usa a IA (Claude) e entra junto com o motor de auditoria. Estou deixando a tela pronta para plugar.</div>
+      <div id="dv_ans"></div>
+      <div class="notice">💬 A resposta usa a IA (Claude) com base nas <b>regras já cadastradas</b> da convenção. Precisa da chave da API configurada (menu ☰) e do app aberto pelo site (https) — não funciona abrindo o arquivo direto.</div>
     </div>`;
+  }
+  function wireDuvidas() {
+    const btn = $('#dv_ask'); if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const convId = $('#dv_conv') && $('#dv_conv').value;
+      const q = ($('#dv_q').value || '').trim();
+      const status = $('#dv_status'), ans = $('#dv_ans');
+      if (!q) return toast('Escreva a pergunta', 'warn');
+      if (!convId) return toast('Escolha a convenção', 'warn');
+      const cfg = await DB.getConfig();
+      if (!cfg.apiKey) { toast('Configure a chave da API em Configurações (menu ☰)', 'err'); return; }
+      const conv = await DB.get('convencoes', convId);
+      btn.disabled = true; btn.textContent = '🤖 Consultando...';
+      status.textContent = 'A IA está lendo as regras da convenção...';
+      ans.innerHTML = '';
+      try {
+        const resp = await IA.perguntarRegras(conv, q, cfg);
+        ans.innerHTML = `<div class="card"><div class="section-hd">Resposta</div>
+          <div style="white-space:pre-wrap;line-height:1.5">${Util.escape(resp)}</div>
+          <div class="mini" style="margin-top:10px">⚖️ Confira sempre no texto oficial da convenção — a resposta é um apoio, não vale como parecer jurídico.</div></div>`;
+        status.textContent = '';
+      } catch (e) {
+        status.innerHTML = '<span style="color:var(--err)">Erro: ' + Util.escape(e.message) + '</span>';
+      }
+      btn.disabled = false; btn.textContent = 'Perguntar';
+    });
   }
 
   /* ------------- helpers ------------- */
@@ -589,6 +626,7 @@
     app.innerHTML = '<div class="view"><div class="empty"><div class="em">⏳</div></div></div>';
     app.innerHTML = await VIEWS[state.view](arg);
     if (state.view === 'conferencia') wireConferencia();
+    if (state.view === 'duvidas') wireDuvidas();
   }
 
   function wireConferencia() {

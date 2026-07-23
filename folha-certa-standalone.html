@@ -869,7 +869,7 @@ const IA = (function () {
     return extrairJSON(await chamar(cfg, system, content, 24000));
   }
 
-  /* ---- Tirar dúvida sobre a convenção (texto livre) ---- */
+  /* ---- Tirar dúvida sobre a convenção (texto livre, com PDF) ---- */
   async function perguntarConvencao(base64pdf, pergunta, cfg) {
     const system = 'Você é um especialista em convenções coletivas de trabalho no Brasil. Responda à pergunta ' +
       'com base APENAS no PDF da convenção anexado, citando a cláusula quando possível. Seja objetivo e em português.';
@@ -877,7 +877,24 @@ const IA = (function () {
     return (await chamar(cfg, system, content, 4000)).trim();
   }
 
-  return { absorverConvencao, absorverFolha, perguntarConvencao, extrairJSON };
+  /* ---- Tirar dúvida com base nas REGRAS já cadastradas (não precisa do PDF) ---- */
+  async function perguntarRegras(conv, pergunta, cfg) {
+    const ctx = {
+      titulo: conv.titulo, abrangencia: conv.abrangencia, uf: conv.uf,
+      dataBaseMes: conv.dataBaseMes, vigenciaInicio: conv.vigenciaInicio, vigenciaFim: conv.vigenciaFim,
+      regras: conv.regras || {},
+    };
+    const system =
+      'Você é um especialista em convenções coletivas de trabalho no Brasil, ajudando um contador na conferência de folha. ' +
+      'Responda à pergunta usando SOMENTE os dados da convenção fornecidos em JSON (pisos, tempo de serviço/triênio, ' +
+      'adicionais, estabilidades, benefícios, contribuições e observações). Cite o valor ou percentual exato quando houver e ' +
+      'faça as contas se a pergunta pedir (ex.: quantos triênios, valor do adicional). Se a convenção não trata do ponto, diga ' +
+      'isso com clareza e, quando couber, lembre que vale a regra geral da CLT. Seja objetivo, em português, sem inventar valores.';
+    const content = [{ type: 'text', text: 'CONVENÇÃO (dados cadastrados):\n' + JSON.stringify(ctx, null, 1) + '\n\nPERGUNTA:\n' + pergunta }];
+    return (await chamar(cfg, system, content, 1500)).trim();
+  }
+
+  return { absorverConvencao, absorverFolha, perguntarConvencao, perguntarRegras, extrairJSON };
 })();
 
 </script>
@@ -1440,16 +1457,53 @@ const IA = (function () {
     if (b) b.addEventListener('click', () => salvarPdf(html));
   }
   async function viewDuvidas() {
+    const ativas = (await DB.list('convencoes')).filter(c => !c.arquivada);
+    if (!ativas.length) return `<div class="view">
+      <div class="view-title">Dúvidas da convenção</div>
+      <p class="view-sub">Pergunte o que o funcionário tem direito, com base na convenção.</p>
+      ${emptyState('💬', 'Nenhuma convenção cadastrada', 'Cadastre ou importe uma convenção primeiro. Aí você pode perguntar sobre os direitos dela aqui.')}
+    </div>`;
+    const opts = ativas.map(c => `<option value="${c.id}">${Util.escape(c.titulo || 'Convenção')}</option>`).join('');
     return `<div class="view">
       <div class="view-title">Dúvidas da convenção</div>
       <p class="view-sub">Pergunte o que o funcionário tem direito, com base na convenção.</p>
       <div class="card">
+        <div class="field"><label>Convenção</label>
+          <select id="dv_conv">${opts}</select></div>
         <div class="field"><label>Sua pergunta</label>
-          <textarea id="dv_q" placeholder="Ex.: O vigilante com 4 anos de casa tem direito a quantos triênios?"></textarea></div>
+          <textarea id="dv_q" placeholder="Ex.: O caixa com 4 anos de casa tem direito a quantos triênios e a quebra de caixa?"></textarea></div>
         <button class="btn primary block" id="dv_ask">Perguntar</button>
+        <div id="dv_status" class="mini" style="margin-top:8px"></div>
       </div>
-      <div class="notice gold">💬 A resposta com base no PDF da convenção usa a IA (Claude) e entra junto com o motor de auditoria. Estou deixando a tela pronta para plugar.</div>
+      <div id="dv_ans"></div>
+      <div class="notice">💬 A resposta usa a IA (Claude) com base nas <b>regras já cadastradas</b> da convenção. Precisa da chave da API configurada (menu ☰) e do app aberto pelo site (https) — não funciona abrindo o arquivo direto.</div>
     </div>`;
+  }
+  function wireDuvidas() {
+    const btn = $('#dv_ask'); if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const convId = $('#dv_conv') && $('#dv_conv').value;
+      const q = ($('#dv_q').value || '').trim();
+      const status = $('#dv_status'), ans = $('#dv_ans');
+      if (!q) return toast('Escreva a pergunta', 'warn');
+      if (!convId) return toast('Escolha a convenção', 'warn');
+      const cfg = await DB.getConfig();
+      if (!cfg.apiKey) { toast('Configure a chave da API em Configurações (menu ☰)', 'err'); return; }
+      const conv = await DB.get('convencoes', convId);
+      btn.disabled = true; btn.textContent = '🤖 Consultando...';
+      status.textContent = 'A IA está lendo as regras da convenção...';
+      ans.innerHTML = '';
+      try {
+        const resp = await IA.perguntarRegras(conv, q, cfg);
+        ans.innerHTML = `<div class="card"><div class="section-hd">Resposta</div>
+          <div style="white-space:pre-wrap;line-height:1.5">${Util.escape(resp)}</div>
+          <div class="mini" style="margin-top:10px">⚖️ Confira sempre no texto oficial da convenção — a resposta é um apoio, não vale como parecer jurídico.</div></div>`;
+        status.textContent = '';
+      } catch (e) {
+        status.innerHTML = '<span style="color:var(--err)">Erro: ' + Util.escape(e.message) + '</span>';
+      }
+      btn.disabled = false; btn.textContent = 'Perguntar';
+    });
   }
 
   /* ------------- helpers ------------- */
@@ -1473,6 +1527,7 @@ const IA = (function () {
     app.innerHTML = '<div class="view"><div class="empty"><div class="em">⏳</div></div></div>';
     app.innerHTML = await VIEWS[state.view](arg);
     if (state.view === 'conferencia') wireConferencia();
+    if (state.view === 'duvidas') wireDuvidas();
   }
 
   function wireConferencia() {

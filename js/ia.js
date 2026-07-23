@@ -114,7 +114,7 @@ const IA = (function () {
     return extrairJSON(await chamar(cfg, system, content, 24000));
   }
 
-  /* ---- Tirar dúvida sobre a convenção (texto livre) ---- */
+  /* ---- Tirar dúvida sobre a convenção (texto livre, com PDF) ---- */
   async function perguntarConvencao(base64pdf, pergunta, cfg) {
     const system = 'Você é um especialista em convenções coletivas de trabalho no Brasil. Responda à pergunta ' +
       'com base APENAS no PDF da convenção anexado, citando a cláusula quando possível. Seja objetivo e em português.';
@@ -122,5 +122,22 @@ const IA = (function () {
     return (await chamar(cfg, system, content, 4000)).trim();
   }
 
-  return { absorverConvencao, absorverFolha, perguntarConvencao, extrairJSON };
+  /* ---- Tirar dúvida com base nas REGRAS já cadastradas (não precisa do PDF) ---- */
+  async function perguntarRegras(conv, pergunta, cfg) {
+    const ctx = {
+      titulo: conv.titulo, abrangencia: conv.abrangencia, uf: conv.uf,
+      dataBaseMes: conv.dataBaseMes, vigenciaInicio: conv.vigenciaInicio, vigenciaFim: conv.vigenciaFim,
+      regras: conv.regras || {},
+    };
+    const system =
+      'Você é um especialista em convenções coletivas de trabalho no Brasil, ajudando um contador na conferência de folha. ' +
+      'Responda à pergunta usando SOMENTE os dados da convenção fornecidos em JSON (pisos, tempo de serviço/triênio, ' +
+      'adicionais, estabilidades, benefícios, contribuições e observações). Cite o valor ou percentual exato quando houver e ' +
+      'faça as contas se a pergunta pedir (ex.: quantos triênios, valor do adicional). Se a convenção não trata do ponto, diga ' +
+      'isso com clareza e, quando couber, lembre que vale a regra geral da CLT. Seja objetivo, em português, sem inventar valores.';
+    const content = [{ type: 'text', text: 'CONVENÇÃO (dados cadastrados):\n' + JSON.stringify(ctx, null, 1) + '\n\nPERGUNTA:\n' + pergunta }];
+    return (await chamar(cfg, system, content, 1500)).trim();
+  }
+
+  return { absorverConvencao, absorverFolha, perguntarConvencao, perguntarRegras, extrairJSON };
 })();
